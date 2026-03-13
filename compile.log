@@ -1,0 +1,30 @@
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+
+> Task :app:compileDebugKotlin FAILED
+e: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/setup_profile/SetupProfileScreen.kt:32:69 Unresolved reference 'compose'.
+e: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/setup_profile/SetupProfileScreen.kt:180:38 Unresolved reference 'TrendingDown'.
+e: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/setup_profile/SetupProfileScreen.kt:195:38 Unresolved reference 'FitnessCenter'.
+e: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/setup_profile/SetupProfileScreen.kt:243:65 Unresolved reference. None of the following candidates is applicable because of a receiver type mismatch:
+val Icons.Filled.ArrowForward: ImageVector
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin'.
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 3s
+6 actionable tasks: 1 executed, 5 up-to-date

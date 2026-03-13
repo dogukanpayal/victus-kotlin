@@ -1,0 +1,316 @@
+package com.dogukanpayal.victus_frontend.ui.profile
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.dogukanpayal.victus_frontend.ui.setup_profile.Goal
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileScreen(
+    viewModel: ProfileViewModel = ProfileViewModel(),
+    onNavigateBack: () -> Unit = {},
+    onNavigateToEditProfile: () -> Unit = {}
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    val primaryGreen = Color(0xFF22C55E)
+    val darkText = Color(0xFF0F172A)
+    val grayText = Color(0xFF64748B)
+    val lightGray = Color(0xFFF1F5F9)
+    val superLightGreen = Color(0xFFF0FDF4)
+    val lightRed = Color(0xFFFFEBEB)
+    val primaryRed = Color(0xFFEF4444)
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Profil ve Ayarlar",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = darkText,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = darkText
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* No function */ }) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = "Settings",
+                            tint = darkText
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            )
+        },
+        containerColor = Color.White
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Profile Image with Border
+            Box(
+                modifier = Modifier
+                    .size(120.dp)
+                    .border(width = 4.dp, color = superLightGreen, shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Profile Picture",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                        .background(lightGray),
+                    tint = grayText
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = uiState.name,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = darkText
+            )
+            Text(
+                text = uiState.email,
+                fontSize = 14.sp,
+                color = grayText
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = onNavigateToEditProfile,
+                colors = ButtonDefaults.buttonColors(containerColor = primaryGreen),
+                shape = RoundedCornerShape(24.dp),
+                modifier = Modifier
+                    .width(200.dp)
+                    .height(48.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(text = "Profili Düzenle", fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Account Info Section
+            SettingsSectionTitle(title = "HESAP BİLGİLERİ")
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .border(width = 1.dp, color = lightGray, shape = RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(16.dp))
+            ) {
+                SettingsItem(
+                    icon = Icons.Default.Menu, // Closest to Ruler/Height icon
+                    title = "Boy",
+                    value = "${uiState.heightCm} cm",
+                    iconBackground = superLightGreen,
+                    iconColor = primaryGreen
+                )
+                Divider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                SettingsItem(
+                    icon = Icons.Default.PlayArrow, // Closest to Weight/Dumbbell icon
+                    title = "Kilo",
+                    value = "${uiState.weightKg} kg",
+                    iconBackground = superLightGreen,
+                    iconColor = primaryGreen
+                )
+                Divider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                SettingsItem(
+                    icon = Icons.Default.Refresh, // Closest to Fitness Goal icon
+                    title = "Fitness Hedefi",
+                    value = when(uiState.fitnessGoal) {
+                        Goal.LOSE_WEIGHT -> "Kilo Ver"
+                        Goal.GAIN_MUSCLE -> "Kas Kütlesi Kazan"
+                        Goal.STAY_IN_SHAPE -> "Formda Kal"
+                    },
+                    iconBackground = superLightGreen,
+                    iconColor = primaryGreen
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // App Settings Section
+            SettingsSectionTitle(title = "UYGULAMA AYARLARI")
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .border(width = 1.dp, color = lightGray, shape = RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(16.dp))
+            ) {
+                SettingsItem(
+                    icon = Icons.Default.Notifications,
+                    title = "Bildirimler",
+                    iconBackground = lightGray,
+                    iconColor = darkText
+                )
+                Divider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                SettingsItem(
+                    icon = Icons.Default.Lock,
+                    title = "Gizlilik ve Güvenlik",
+                    iconBackground = lightGray,
+                    iconColor = darkText
+                )
+                Divider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                SettingsItem(
+                    icon = Icons.Default.Info,
+                    title = "Yardım Merkezi",
+                    iconBackground = lightGray,
+                    iconColor = darkText
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Logout Button
+            OutlinedButton(
+                onClick = viewModel::onLogoutClicked,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .height(56.dp),
+                shape = RoundedCornerShape(28.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, lightRed),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryRed)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(imageVector = Icons.Default.ExitToApp, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Oturumu Kapat", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = "VERSİYON ${uiState.version}",
+                fontSize = 10.sp,
+                color = grayText,
+                letterSpacing = 1.sp
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+        }
+    }
+}
+
+@Composable
+fun SettingsSectionTitle(title: String) {
+    Text(
+        text = title,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Bold,
+        color = Color(0xFF94A3B8),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        letterSpacing = 0.5.sp
+    )
+}
+
+@Composable
+fun SettingsItem(
+    icon: ImageVector,
+    title: String,
+    value: String? = null,
+    iconBackground: Color,
+    iconColor: Color
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { /* No function */ }
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(iconBackground),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconColor,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF0F172A)
+            )
+            if (value != null) {
+                Text(
+                    text = value,
+                    fontSize = 12.sp,
+                    color = Color(0xFF64748B)
+                )
+            }
+        }
+
+        Icon(
+            imageVector = Icons.Default.KeyboardArrowRight,
+            contentDescription = null,
+            tint = Color(0xFF94A3B8)
+        )
+    }
+}

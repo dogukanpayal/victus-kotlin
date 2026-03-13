@@ -1,0 +1,25 @@
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+
+> Task :app:compileDebugKotlin
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/login/LoginScreen.kt:249:49 'val Icons.Filled.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowForward.
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/login/LoginScreen.kt:262:13 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/login/LoginScreen.kt:270:13 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/profile/EditProfileScreen.kt:62:57 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/profile/EditProfileScreen.kt:443:45 'val Icons.Filled.KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight.
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/profile/ProfileScreen.kt:63:57 'val Icons.Filled.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ArrowBack.
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/profile/ProfileScreen.kt:158:17 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/profile/ProfileScreen.kt:166:17 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/profile/ProfileScreen.kt:198:17 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/profile/ProfileScreen.kt:205:17 'fun Divider(modifier: Modifier = ..., thickness: Dp = ..., color: Color = ...): Unit' is deprecated. Renamed to HorizontalDivider.
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/profile/ProfileScreen.kt:228:54 'val Icons.Filled.ExitToApp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.ExitToApp.
+w: file:///C:/Users/payal/Desktop/Work/Victus/victus_frontend/app/src/main/java/com/dogukanpayal/victus_frontend/ui/profile/ProfileScreen.kt:311:41 'val Icons.Filled.KeyboardArrowRight: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Filled.KeyboardArrowRight.
+
+BUILD SUCCESSFUL in 9s
+6 actionable tasks: 1 executed, 5 up-to-date
+Consider enabling configuration cache to speed up this build: https://docs.gradle.org/9.3.1/userguide/configuration_cache_enabling.html
