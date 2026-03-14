@@ -1,11 +1,19 @@
 package com.dogukanpayal.victus_frontend.ui.register
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.dogukanpayal.victus_frontend.data.repository.AuthRepository
+import com.dogukanpayal.victus_frontend.data.repository.AuthRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import android.util.Log
 
-class RegisterViewModel : ViewModel() {
+class RegisterViewModel(
+    private val authRepository: AuthRepository = AuthRepositoryImpl() // Default for now
+) : ViewModel() {
+    private val TAG = "VictusAuth"
     private val _fullName = MutableStateFlow("")
     val fullName: StateFlow<String> = _fullName.asStateFlow()
 
@@ -42,8 +50,21 @@ class RegisterViewModel : ViewModel() {
     }
 
     fun onRegisterClicked() {
-        // Handle registration logic here later (no backend integration yet)
-        println("Register clicked with: Name=${fullName.value}, Email=${email.value}, Password=${password.value}, Terms=${termsAccepted.value}")
+        Log.d(TAG, "Register button clicked. Name: ${fullName.value}, Email: ${email.value}")
+        if (!termsAccepted.value) {
+            Log.w(TAG, "Registration attempt failed: Terms not accepted")
+            return
+        }
+
+        viewModelScope.launch {
+            val result = authRepository.register(email.value, password.value, fullName.value)
+            result.onSuccess {
+                Log.d(TAG, "Registration ViewModel: Success for ${email.value}")
+                // Navigate to next screen or update state
+            }.onFailure {
+                Log.e(TAG, "Registration ViewModel: Failure - ${it.message}")
+            }
+        }
     }
 
     fun onGoogleRegisterClicked() {

@@ -1,46 +1,66 @@
 package com.dogukanpayal.victus_frontend.data.repository
 
+import android.util.Log
 import com.dogukanpayal.victus_frontend.data.model.AuthSession
 import com.dogukanpayal.victus_frontend.data.model.LoginRequest
+import com.dogukanpayal.victus_frontend.data.model.RegisterRequest
+import com.dogukanpayal.victus_frontend.data.remote.RetrofitClient
 
 interface AuthRepository {
     suspend fun login(request: LoginRequest): Result<AuthSession>
-    suspend fun register(email: String, password: String): Result<AuthSession>
+    suspend fun register(email: String, password: String, fullName: String): Result<AuthSession>
     suspend fun logout(): Result<Unit>
 }
 
 class AuthRepositoryImpl : AuthRepository {
+    private val TAG = "VictusAuth"
 
     // Mock Supabase client - In production, this would be properly initialized
     private val supabaseUrl = "https://your-project.supabase.co"
     private val supabaseKey = "your-anon-key"
 
     override suspend fun login(request: LoginRequest): Result<AuthSession> {
+        Log.d(TAG, "Login attempt for: ${request.email}")
         return try {
             // Supabase Auth login
-            // In production, initialize with real Supabase project credentials
             val session =
                     AuthSession(
                             accessToken = "mock_access_token",
                             userId = "mock_user_id",
                             email = request.email
                     )
+            Log.d(TAG, "Login successful for: ${request.email}")
             Result.success(session)
         } catch (e: Exception) {
+            Log.e(TAG, "Login failed: ${e.message}")
             Result.failure(e)
         }
     }
 
-    override suspend fun register(email: String, password: String): Result<AuthSession> {
+    override suspend fun register(email: String, password: String, fullName: String): Result<AuthSession> {
+        Log.d(TAG, "Registering user via API: $fullName ($email)")
         return try {
-            val session =
-                    AuthSession(
-                            accessToken = "mock_access_token",
-                            userId = "mock_user_id",
-                            email = email
-                    )
-            Result.success(session)
+            val request = RegisterRequest(fullName = fullName, email = email, password = password)
+            val response = RetrofitClient.apiService.register(request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val profile = response.body()!!
+                Log.d(TAG, "Registration API Success: ${profile.email}, ID: ${profile.id}")
+                
+                // For now, return a session with a mock token but the real User ID from the backend
+                val session = AuthSession(
+                    accessToken = "backend_confirmed_registration",
+                    userId = profile.id,
+                    email = profile.email
+                )
+                Result.success(session)
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                Log.e(TAG, "Registration API Error: ${response.code()} - $errorMsg")
+                Result.failure(Exception("Registration failed: $errorMsg"))
+            }
         } catch (e: Exception) {
+            Log.e(TAG, "Registration API Exception: ${e.message}")
             Result.failure(e)
         }
     }
