@@ -1,11 +1,9 @@
 package com.dogukanpayal.victus_frontend.ui.register
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -30,6 +28,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dogukanpayal.victus_frontend.ui.components.CustomRoundedCheckbox
 
 private val primaryGreen = Color(0xFF22C55E)
 private val lightGray = Color(0xFFF1F5F9)
@@ -206,7 +205,7 @@ fun RegisterScreen(
                 trailingIcon = {
                     IconButton(onClick = viewModel::togglePasswordVisibility) {
                         Icon(
-                            imageVector = Icons.Default.Info, // Placeholder for Visibility
+                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                             contentDescription = "Toggle Password Visibility",
                             tint = grayText
                         )
@@ -233,14 +232,13 @@ fun RegisterScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(
+            CustomRoundedCheckbox(
                 checked = termsAccepted,
                 onCheckedChange = viewModel::onTermsAcceptedChanged,
-                colors = CheckboxDefaults.colors(
-                    checkedColor = primaryGreen,
-                    uncheckedColor = grayText
-                )
+                checkedColor = primaryGreen,
+                uncheckedColor = lightGray
             )
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "Şartları ve Koşulları Kabul Ediyorum",
                 fontSize = 14.sp,
@@ -279,86 +277,6 @@ fun RegisterScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // VEYA Divider
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            HorizontalDivider(modifier = Modifier.weight(1f), color = lightGray)
-            Text(
-                text = "veya şununla devam et",
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = grayText,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            HorizontalDivider(modifier = Modifier.weight(1f), color = lightGray)
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Row(
-             modifier = Modifier.fillMaxWidth(),
-             horizontalArrangement = Arrangement.spacedBy(16.dp),
-             verticalAlignment = Alignment.CenterVertically
-        ) {
-             // Google Button
-            OutlinedButton(
-                onClick = viewModel::onGoogleRegisterClicked,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = darkText),
-                border = BorderStroke(1.dp, lightGray)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Placeholder for Google Icon
-                    Box(modifier = Modifier.size(20.dp).background(Color.Black, CircleShape))
-                    Spacer(modifier = Modifier.width(8.dp))
-                     Text(
-                        text = "Google",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold
-                     )
-                }
-            }
-
-            // Apple Button
-            OutlinedButton(
-                onClick = viewModel::onAppleRegisterClicked,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                shape = RoundedCornerShape(28.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = darkText),
-                border = BorderStroke(1.dp, lightGray)
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Placeholder for Apple Icon
-                    Icon(
-                        imageVector = Icons.Default.Person, // Apple icon is not standard, using placeholder
-                        contentDescription = "Apple Icon",
-                        tint = Color.Black,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                     Text(
-                        text = "Apple",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                     )
-                }
-            }
-        }
-       
-        Spacer(modifier = Modifier.height(48.dp))
 
         // Login Text
         Text(
