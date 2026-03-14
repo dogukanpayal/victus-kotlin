@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -45,6 +46,15 @@ fun LoginScreen(
     val password by viewModel.password.collectAsState()
     val rememberMe by viewModel.rememberMe.collectAsState()
     val passwordVisible by viewModel.passwordVisible.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val loginResult by viewModel.loginResult.collectAsState()
+
+    LaunchedEffect(loginResult) {
+        loginResult?.onSuccess {
+            onNavigateToProfile()
+            viewModel.clearResult()
+        }
+    }
 
     val primaryGreen = Color(0xFF22C55E)
     val lightGray = Color(0xFFF1F5F9)
@@ -226,6 +236,18 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Error Message
+        loginResult?.onFailure { exception ->
+            Text(
+                text = exception.message ?: "Giriş başarısız",
+                color = Color.Red,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Login Button
         Button(
             onClick = viewModel::onLoginClicked,
@@ -233,23 +255,33 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .height(56.dp),
             shape = RoundedCornerShape(28.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = primaryGreen)
+            colors = ButtonDefaults.buttonColors(containerColor = primaryGreen),
+            enabled = !isLoading
         ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Giriş Yap",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Login Arrow"
-                )
+            } else {
+                Row(
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Giriş Yap",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = "Login Arrow",
+                        tint = Color.White
+                    )
+                }
             }
         }
 

@@ -26,6 +26,12 @@ class LoginViewModel(
     private val _passwordVisible = MutableStateFlow(false)
     val passwordVisible: StateFlow<Boolean> = _passwordVisible.asStateFlow()
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _loginResult = MutableStateFlow<Result<com.dogukanpayal.victus_frontend.data.model.AuthSession>?>(null)
+    val loginResult: StateFlow<Result<com.dogukanpayal.victus_frontend.data.model.AuthSession>?> = _loginResult.asStateFlow()
+
     fun onEmailChanged(email: String) {
         _email.value = email
     }
@@ -43,18 +49,29 @@ class LoginViewModel(
     }
 
     fun onLoginClicked() {
-        // Just print, no actual interaction needed per request
-        println("Login clicked with email: ${_email.value}")
-        
+        if (_email.value.isBlank() || _password.value.isBlank()) {
+            _loginResult.value = Result.failure(Exception("Lütfen tüm alanları doldurun"))
+            return
+        }
+
         viewModelScope.launch {
-            authRepository.login(
+            _isLoading.value = true
+            _loginResult.value = null
+            
+            val result = authRepository.login(
                 LoginRequest(
                     email = _email.value,
-                    password = _password.value,
-                    rememberMe = _rememberMe.value
+                    password = _password.value
                 )
             )
+            
+            _loginResult.value = result
+            _isLoading.value = false
         }
+    }
+
+    fun clearResult() {
+        _loginResult.value = null
     }
 
     fun onGoogleLoginClicked() {

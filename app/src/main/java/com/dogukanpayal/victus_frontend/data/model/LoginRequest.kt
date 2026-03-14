@@ -1,7 +1,8 @@
 package com.dogukanpayal.victus_frontend.data.model
 
+import com.squareup.moshi.Json
+
 data class LoginRequest(
-    val email: String,
-    val password: String,
-    val rememberMe: Boolean = false
+    @Json(name = "email") val email: String,
+    @Json(name = "password") val password: String
 )

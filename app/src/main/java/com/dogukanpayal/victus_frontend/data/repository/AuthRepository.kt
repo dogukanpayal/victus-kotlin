@@ -22,17 +22,26 @@ class AuthRepositoryImpl : AuthRepository {
     override suspend fun login(request: LoginRequest): Result<AuthSession> {
         Log.d(TAG, "Login attempt for: ${request.email}")
         return try {
-            // Supabase Auth login
-            val session =
-                    AuthSession(
-                            accessToken = "mock_access_token",
-                            userId = "mock_user_id",
-                            email = request.email
-                    )
-            Log.d(TAG, "Login successful for: ${request.email}")
-            Result.success(session)
+            val response = RetrofitClient.apiService.login(request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                val loginResponse = response.body()!!
+                val profile = loginResponse.user
+                Log.d(TAG, "Login API Success: ${profile.email}, ID: ${profile.id}")
+                
+                val session = AuthSession(
+                    accessToken = loginResponse.accessToken,
+                    userId = profile.id,
+                    email = profile.email
+                )
+                Result.success(session)
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: "Unknown error"
+                Log.e(TAG, "Login API Error: ${response.code()} - $errorMsg")
+                Result.failure(Exception("Login failed: E-posta veya şifre hatalı"))
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Login failed: ${e.message}")
+            Log.e(TAG, "Login API Exception: ${e.message}")
             Result.failure(e)
         }
     }

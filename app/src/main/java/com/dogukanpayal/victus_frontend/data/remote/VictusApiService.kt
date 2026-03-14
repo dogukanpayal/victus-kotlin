@@ -13,4 +13,7 @@ interface VictusApiService {
         @Header("Authorization") token: String,
         @Body request: UpdateProfileRequest
     ): Response<ProfileResponse>
+
+    @POST("v1/auth/login")
+    suspend fun login(@Body request: LoginRequest): Response<RegisterResponse>
 }
