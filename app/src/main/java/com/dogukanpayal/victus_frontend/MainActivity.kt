@@ -48,9 +48,7 @@ class MainActivity : ComponentActivity() {
                                 LoginScreen(
                                     viewModel = loginViewModel,
                                     onNavigateToRegister = { currentScreen.value = Screen.Register },
-                                    onNavigateToSetupProfile = { currentScreen.value = Screen.SetupProfile },
-                                    onNavigateToProfile = { currentScreen.value = Screen.Profile },
-                                    onNavigateToEditProfile = { currentScreen.value = Screen.EditProfile }
+                                    onNavigateToProfile = { currentScreen.value = Screen.Profile }
                                 )
                             }
                             Screen.Register -> {

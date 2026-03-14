@@ -1,7 +1,6 @@
 package com.dogukanpayal.victus_frontend.ui.login
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -12,6 +11,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,17 +31,14 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.dogukanpayal.victus_frontend.ui.components.CustomRoundedCheckbox
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
     onNavigateToRegister: () -> Unit = {},
-    onNavigateToSetupProfile: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {},
-    onNavigateToEditProfile: () -> Unit = {}
+    onNavigateToProfile: () -> Unit = {}
 ) {
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
@@ -71,10 +69,10 @@ fun LoginScreen(
     ) {
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Top Row: Logo and Help Icon
+        // Top Row: Logo
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.Start,
             verticalAlignment = Alignment.Top
         ) {
             Box(
@@ -84,21 +82,14 @@ fun LoginScreen(
                     .background(primaryGreen),
                 contentAlignment = Alignment.Center
             ) {
-                // Placeholder for barbell icon
+                // FitnessCenter icon
                 Icon(
-                    imageVector = Icons.Default.PlayArrow, // Using PlayArrow as placeholder if FitnessCenter is not standard
+                    imageVector = Icons.Default.FitnessCenter,
                     contentDescription = "Logo",
                     tint = Color.White,
                     modifier = Modifier.size(32.dp)
                 )
             }
-
-            Icon(
-                imageVector = Icons.Default.Info,
-                contentDescription = "Help",
-                tint = grayText,
-                modifier = Modifier.size(28.dp)
-            )
         }
 
         Spacer(modifier = Modifier.height(48.dp))
@@ -192,7 +183,7 @@ fun LoginScreen(
                 trailingIcon = {
                     IconButton(onClick = viewModel::togglePasswordVisibility) {
                         Icon(
-                            imageVector = Icons.Default.Info, // Placeholder for Visibility
+                            imageVector = if (passwordVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                             contentDescription = "Toggle Password Visibility",
                             tint = grayText
                         )
@@ -219,14 +210,13 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(
+            CustomRoundedCheckbox(
                 checked = rememberMe,
                 onCheckedChange = viewModel::onRememberMeChanged,
-                colors = CheckboxDefaults.colors(
-                    checkedColor = primaryGreen,
-                    uncheckedColor = grayText
-                )
+                checkedColor = primaryGreen,
+                uncheckedColor = lightGray
             )
+            Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = "Beni Hatırla",
                 fontSize = 14.sp,
@@ -285,82 +275,6 @@ fun LoginScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // VEYA Divider
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            HorizontalDivider(modifier = Modifier.weight(1f), color = lightGray)
-            Text(
-                text = "veya şununla devam et",
-                modifier = Modifier.padding(horizontal = 16.dp),
-                color = grayText,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            HorizontalDivider(modifier = Modifier.weight(1f), color = lightGray)
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Google Button
-        OutlinedButton(
-            onClick = viewModel::onGoogleLoginClicked,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(28.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = darkText),
-            border = BorderStroke(1.dp, lightGray)
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Placeholder for Google Icon
-                Box(modifier = Modifier.size(24.dp).background(Color.Red, CircleShape))
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Google ile Devam Et",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Apple Button
-        Button(
-            onClick = viewModel::onAppleLoginClicked,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(28.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color.Black)
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Placeholder for Apple Icon
-                Icon(
-                    imageVector = Icons.Default.Person, // Apple icon is not standard, using placeholder
-                    contentDescription = "Apple Icon",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Apple ile Devam Et",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
-            }
-        }
 
         Spacer(modifier = Modifier.height(48.dp))
 
@@ -378,81 +292,6 @@ fun LoginScreen(
             modifier = Modifier.clickable { onNavigateToRegister() }
         )
         
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Navigation to Register Screen Button
-        OutlinedButton(
-            onClick = onNavigateToRegister,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(28.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryGreen),
-            border = BorderStroke(1.dp, primaryGreen)
-        ) {
-            Text(
-                text = "Kayıt Ol Ekranına Git",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Navigation to Setup Profile Screen Button
-        OutlinedButton(
-            onClick = onNavigateToSetupProfile,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(28.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryGreen),
-            border = BorderStroke(1.dp, primaryGreen)
-        ) {
-            Text(
-                text = "Profili Tamamla Ekranına Git",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Navigation to Profile Screen Button (profili tamamla ekranına git)
-        OutlinedButton(
-            onClick = onNavigateToProfile,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(28.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryGreen),
-            border = BorderStroke(1.dp, primaryGreen)
-        ) {
-            Text(
-                text = "profili tamamla ekranına git",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Navigation to Edit Profile Screen Button (profili tamamla ekranına git)
-        OutlinedButton(
-            onClick = onNavigateToEditProfile,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(28.dp),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryGreen),
-            border = BorderStroke(1.dp, primaryGreen)
-        ) {
-            Text(
-                text = "profili tamamla ekranına git",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
 
         Spacer(modifier = Modifier.height(24.dp))
     }
