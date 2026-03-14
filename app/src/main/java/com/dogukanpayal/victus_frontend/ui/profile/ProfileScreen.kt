@@ -11,6 +11,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -30,7 +33,7 @@ import com.dogukanpayal.victus_frontend.ui.setup_profile.Goal
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    viewModel: ProfileViewModel = ProfileViewModel(),
+    viewModel: ProfileViewModel,
     onNavigateBack: () -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {}
 ) {
@@ -60,7 +63,7 @@ fun ProfileScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = darkText
                         )
@@ -155,7 +158,7 @@ fun ProfileScreen(
                     iconBackground = superLightGreen,
                     iconColor = primaryGreen
                 )
-                Divider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
                 SettingsItem(
                     icon = Icons.Default.PlayArrow, // Closest to Weight/Dumbbell icon
                     title = "Kilo",
@@ -163,7 +166,7 @@ fun ProfileScreen(
                     iconBackground = superLightGreen,
                     iconColor = primaryGreen
                 )
-                Divider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
                 SettingsItem(
                     icon = Icons.Default.Refresh, // Closest to Fitness Goal icon
                     title = "Fitness Hedefi",
@@ -195,14 +198,14 @@ fun ProfileScreen(
                     iconBackground = lightGray,
                     iconColor = darkText
                 )
-                Divider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
                 SettingsItem(
                     icon = Icons.Default.Lock,
                     title = "Gizlilik ve Güvenlik",
                     iconBackground = lightGray,
                     iconColor = darkText
                 )
-                Divider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
                 SettingsItem(
                     icon = Icons.Default.Info,
                     title = "Yardım Merkezi",
@@ -225,7 +228,7 @@ fun ProfileScreen(
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryRed)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.Default.ExitToApp, contentDescription = null)
+                    Icon(imageVector = Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = "Oturumu Kapat", fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 }
@@ -265,7 +268,8 @@ fun SettingsItem(
     title: String,
     value: String? = null,
     iconBackground: Color,
-    iconColor: Color
+    iconColor: Color,
+    darkText: Color = Color(0xFF0F172A)
 ) {
     Row(
         modifier = Modifier
@@ -282,9 +286,9 @@ fun SettingsItem(
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = iconColor,
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = "Navigate",
+                tint = darkText,
                 modifier = Modifier.size(20.dp)
             )
         }

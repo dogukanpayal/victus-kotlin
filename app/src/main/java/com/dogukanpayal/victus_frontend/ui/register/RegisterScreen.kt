@@ -1,7 +1,6 @@
 package com.dogukanpayal.victus_frontend.ui.register
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,14 +11,14 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -30,12 +29,16 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.outlined.ArrowBack
+
+private val primaryGreen = Color(0xFF22C55E)
+private val lightGray = Color(0xFFF1F5F9)
+private val darkText = Color(0xFF0F172A)
+private val grayText = Color(0xFF64748B)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    viewModel: RegisterViewModel = RegisterViewModel(),
+    viewModel: RegisterViewModel,
     onNavigateToLogin: () -> Unit = {}
 ) {
     val fullName by viewModel.fullName.collectAsState()
@@ -44,10 +47,6 @@ fun RegisterScreen(
     val termsAccepted by viewModel.termsAccepted.collectAsState()
     val passwordVisible by viewModel.passwordVisible.collectAsState()
 
-    val primaryGreen = Color(0xFF22C55E)
-    val lightGray = Color(0xFFF1F5F9)
-    val darkText = Color(0xFF0F172A)
-    val grayText = Color(0xFF64748B)
 
     Column(
         modifier = Modifier
@@ -68,7 +67,7 @@ fun RegisterScreen(
                 modifier = Modifier.size(24.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.ArrowBack, // Standard arrow back icon
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
                     tint = darkText,
                 )
@@ -261,7 +260,7 @@ fun RegisterScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Icon(
-                    imageVector = Icons.Default.ArrowForward,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "Register Arrow"
                 )
             }
@@ -274,7 +273,7 @@ fun RegisterScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Divider(modifier = Modifier.weight(1f), color = lightGray)
+            HorizontalDivider(modifier = Modifier.weight(1f), color = lightGray)
             Text(
                 text = "veya şununla devam et",
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -282,7 +281,7 @@ fun RegisterScreen(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
             )
-            Divider(modifier = Modifier.weight(1f), color = lightGray)
+            HorizontalDivider(modifier = Modifier.weight(1f), color = lightGray)
         }
 
         Spacer(modifier = Modifier.height(32.dp))

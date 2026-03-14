@@ -1,7 +1,6 @@
 package com.dogukanpayal.victus_frontend.ui.login
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,7 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -30,11 +29,13 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    viewModel: LoginViewModel = LoginViewModel(),
+    viewModel: LoginViewModel,
     onNavigateToRegister: () -> Unit = {},
     onNavigateToSetupProfile: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
@@ -83,7 +84,7 @@ fun LoginScreen(
             }
 
             Icon(
-                imageVector = Icons.Outlined.Info,
+                imageVector = Icons.Default.Info,
                 contentDescription = "Help",
                 tint = grayText,
                 modifier = Modifier.size(28.dp)
@@ -246,7 +247,7 @@ fun LoginScreen(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Icon(
-                    imageVector = Icons.Default.ArrowForward,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "Login Arrow"
                 )
             }
@@ -259,15 +260,15 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Divider(modifier = Modifier.weight(1f), color = lightGray)
+            HorizontalDivider(modifier = Modifier.weight(1f), color = lightGray)
             Text(
-                text = "VEYA",
+                text = "veya şununla devam et",
                 modifier = Modifier.padding(horizontal = 16.dp),
                 color = grayText,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold
             )
-            Divider(modifier = Modifier.weight(1f), color = lightGray)
+            HorizontalDivider(modifier = Modifier.weight(1f), color = lightGray)
         }
 
         Spacer(modifier = Modifier.height(32.dp))
