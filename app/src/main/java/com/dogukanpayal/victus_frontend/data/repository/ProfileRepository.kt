@@ -1,6 +1,7 @@
 package com.dogukanpayal.victus_frontend.data.repository
 
-import com.dogukanpayal.victus_frontend.data.model.ProfileResponse
+import com.dogukanpayal.victus_frontend.data.model.*
+import com.dogukanpayal.victus_frontend.data.remote.*
 
 interface ProfileRepository {
     suspend fun updateProfile(
@@ -13,7 +14,9 @@ interface ProfileRepository {
     ): Result<ProfileResponse>
 }
 
-class ProfileRepositoryImpl : ProfileRepository {
+class ProfileRepositoryImpl(
+    private val apiService: VictusApiService = RetrofitClient.apiService
+) : ProfileRepository {
     override suspend fun updateProfile(
         accessToken: String,
         email: String,
@@ -23,17 +26,23 @@ class ProfileRepositoryImpl : ProfileRepository {
         sex: String
     ): Result<ProfileResponse> {
         return try {
-            // Mock implementation - In production, this would call the backend API
-            val response = ProfileResponse(
-                id = "mock_user_id",
+            val request = UpdateProfileRequest(
                 email = email,
-                age = age,
-                sex = sex,
                 heightCm = heightCm,
                 weightKg = weightKg,
-                bmr = (10.0 * weightKg) + (6.25 * heightCm) - (5.0 * age) + (if (sex == "male") 5.0 else -161.0)
+                age = age,
+                sex = sex
             )
-            Result.success(response)
+            // Backend expects "Bearer <token>"
+            val authHeader = "Bearer $accessToken"
+            val response = apiService.updateProfile(authHeader, request)
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: "Profile update failed"
+                Result.failure(Exception(errorMsg))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }

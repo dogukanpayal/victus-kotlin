@@ -34,6 +34,9 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding)) {
                         val currentScreen = remember { mutableStateOf(Screen.Login) }
+                        val setupToken = remember { mutableStateOf("") }
+                        val setupEmail = remember { mutableStateOf("") }
+                        
                         val loginViewModel = remember { LoginViewModel() }
                         val registerViewModel = remember { RegisterViewModel() }
                         val setupProfileViewModel = remember { SetupProfileViewModel() }
@@ -53,13 +56,23 @@ class MainActivity : ComponentActivity() {
                             Screen.Register -> {
                                 RegisterScreen(
                                     viewModel = registerViewModel,
-                                    onNavigateToLogin = { currentScreen.value = Screen.Login }
+                                    onNavigateToLogin = { currentScreen.value = Screen.Login },
+                                    onNavigateToSetup = { token, email ->
+                                        setupToken.value = token
+                                        setupEmail.value = email
+                                        currentScreen.value = Screen.SetupProfile
+                                    }
                                 )
                             }
                             Screen.SetupProfile -> {
                                 SetupProfileScreen(
                                     viewModel = setupProfileViewModel,
-                                    onNavigateBack = { currentScreen.value = Screen.Login }
+                                    onNavigateBack = { currentScreen.value = Screen.Login },
+                                    accessToken = setupToken.value,
+                                    email = setupEmail.value,
+                                    onProfileUpdateSuccess = {
+                                        currentScreen.value = Screen.Profile
+                                    }
                                 )
                             }
                             Screen.Profile -> {

@@ -15,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -35,17 +36,27 @@ private val lightGray = Color(0xFFF1F5F9)
 private val darkText = Color(0xFF0F172A)
 private val grayText = Color(0xFF64748B)
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
     viewModel: RegisterViewModel,
-    onNavigateToLogin: () -> Unit = {}
+    onNavigateToLogin: () -> Unit = {},
+    onNavigateToSetup: (accessToken: String, email: String) -> Unit = { _, _ -> }
 ) {
     val fullName by viewModel.fullName.collectAsState()
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
     val termsAccepted by viewModel.termsAccepted.collectAsState()
     val passwordVisible by viewModel.passwordVisible.collectAsState()
+    val registrationResult by viewModel.registrationResult.collectAsState()
+
+    LaunchedEffect(registrationResult) {
+        registrationResult?.onSuccess { session ->
+            onNavigateToSetup(session.accessToken, session.email)
+            viewModel.clearResult()
+        }
+    }
 
 
     Column(

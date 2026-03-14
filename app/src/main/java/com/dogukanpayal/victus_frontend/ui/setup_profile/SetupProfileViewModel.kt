@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 enum class Goal {
     LOSE_WEIGHT,
@@ -76,12 +77,13 @@ class SetupProfileViewModel(
         viewModelScope.launch {
             _updateState.value = ProfileUpdateState.LOADING
 
+
             val result =
                     profileRepository.updateProfile(
                             accessToken = accessToken,
                             email = email,
-                            heightCm = _heightCm.value.toDouble(),
-                            weightKg = _weightKg.value.toDouble(),
+                            heightCm = _heightCm.value.roundToInt().toDouble(),
+                            weightKg = _weightKg.value.roundToInt().toDouble(),
                             age = _age.value,
                             sex = _selectedSex.value
                     )

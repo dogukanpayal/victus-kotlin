@@ -44,12 +44,12 @@ class AuthRepositoryImpl : AuthRepository {
             val response = RetrofitClient.apiService.register(request)
             
             if (response.isSuccessful && response.body() != null) {
-                val profile = response.body()!!
+                val registerResponse = response.body()!!
+                val profile = registerResponse.user
                 Log.d(TAG, "Registration API Success: ${profile.email}, ID: ${profile.id}")
                 
-                // For now, return a session with a mock token but the real User ID from the backend
                 val session = AuthSession(
-                    accessToken = "backend_confirmed_registration",
+                    accessToken = registerResponse.accessToken,
                     userId = profile.id,
                     email = profile.email
                 )

@@ -29,6 +29,9 @@ class RegisterViewModel(
     private val _passwordVisible = MutableStateFlow(false)
     val passwordVisible: StateFlow<Boolean> = _passwordVisible.asStateFlow()
 
+    private val _registrationResult = MutableStateFlow<Result<com.dogukanpayal.victus_frontend.data.model.AuthSession>?>(null)
+    val registrationResult: StateFlow<Result<com.dogukanpayal.victus_frontend.data.model.AuthSession>?> = _registrationResult.asStateFlow()
+
     fun onFullNameChanged(newName: String) {
         _fullName.value = newName
     }
@@ -58,13 +61,17 @@ class RegisterViewModel(
 
         viewModelScope.launch {
             val result = authRepository.register(email.value, password.value, fullName.value)
+            _registrationResult.value = result
             result.onSuccess {
                 Log.d(TAG, "Registration ViewModel: Success for ${email.value}")
-                // Navigate to next screen or update state
             }.onFailure {
                 Log.e(TAG, "Registration ViewModel: Failure - ${it.message}")
             }
         }
+    }
+
+    fun clearResult() {
+        _registrationResult.value = null
     }
 
     fun onGoogleRegisterClicked() {

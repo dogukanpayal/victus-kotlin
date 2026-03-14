@@ -2,12 +2,10 @@ package com.dogukanpayal.victus_frontend.data.model
 
 import com.squareup.moshi.Json
 
-data class ProfileResponse(
-    val id: String,
+data class UpdateProfileRequest(
     val email: String,
-    val age: Int,
-    val sex: String,
     @Json(name = "height_cm") val heightCm: Double,
     @Json(name = "weight_kg") val weightKg: Double,
-    val bmr: Double
+    val age: Int,
+    val sex: String
 )
