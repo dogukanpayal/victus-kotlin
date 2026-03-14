@@ -102,6 +102,7 @@ class SetupProfileViewModel(
                     profileRepository.updateProfile(
                             accessToken = accessToken,
                             email = email,
+                            fullName = email.substringBefore("@"),  // Email'den ad çıkar
                             heightCm = heightValue,
                             weightKg = weightValue,
                             age = ageValue,
@@ -113,7 +114,7 @@ class SetupProfileViewModel(
                     .onSuccess { response ->
                         Log.d(TAG, "Profile Update Success:")
                         Log.d(TAG, "BMR: ${response.bmr} kcal")
-                        Log.d(TAG, "Daily Calories: ${response.daily_calories} kcal")
+                        Log.d(TAG, "Daily Calories: ${response.dailyCalories} kcal")
                         Log.d(TAG, "Goal: ${response.goal}")
                         _profileResponse.value = response
                         _updateState.value = ProfileUpdateState.SUCCESS

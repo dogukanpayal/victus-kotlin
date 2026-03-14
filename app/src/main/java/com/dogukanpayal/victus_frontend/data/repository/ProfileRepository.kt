@@ -7,11 +7,16 @@ interface ProfileRepository {
     suspend fun updateProfile(
         accessToken: String,
         email: String,
+        fullName: String,
         heightCm: Double,
         weightKg: Double,
         age: Int,
         sex: String,
         goal: String
+    ): Result<ProfileResponse>
+
+    suspend fun getProfile(
+        accessToken: String
     ): Result<ProfileResponse>
 }
 
@@ -21,6 +26,7 @@ class ProfileRepositoryImpl(
     override suspend fun updateProfile(
         accessToken: String,
         email: String,
+        fullName: String,
         heightCm: Double,
         weightKg: Double,
         age: Int,
@@ -30,6 +36,7 @@ class ProfileRepositoryImpl(
         return try {
             val request = UpdateProfileRequest(
                 email = email,
+                fullName = fullName,
                 heightCm = heightCm,
                 weightKg = weightKg,
                 age = age,
@@ -44,6 +51,24 @@ class ProfileRepositoryImpl(
                 Result.success(response.body()!!)
             } else {
                 val errorMsg = response.errorBody()?.string() ?: "Profile update failed"
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getProfile(
+        accessToken: String
+    ): Result<ProfileResponse> {
+        return try {
+            val authHeader = "Bearer $accessToken"
+            val response = apiService.getProfile(authHeader)
+
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: "Profile fetch failed"
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {

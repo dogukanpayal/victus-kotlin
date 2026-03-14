@@ -38,7 +38,7 @@ import com.dogukanpayal.victus_frontend.ui.components.CustomRoundedCheckbox
 fun LoginScreen(
     viewModel: LoginViewModel,
     onNavigateToRegister: () -> Unit = {},
-    onNavigateToProfile: () -> Unit = {}
+    onNavigateToProfile: (authSession: com.dogukanpayal.victus_frontend.data.model.AuthSession) -> Unit = {}
 ) {
     val email by viewModel.email.collectAsState()
     val password by viewModel.password.collectAsState()
@@ -48,8 +48,8 @@ fun LoginScreen(
     val loginResult by viewModel.loginResult.collectAsState()
 
     LaunchedEffect(loginResult) {
-        loginResult?.onSuccess {
-            onNavigateToProfile()
+        loginResult?.onSuccess { authSession ->
+            onNavigateToProfile(authSession)
             viewModel.clearResult()
         }
     }

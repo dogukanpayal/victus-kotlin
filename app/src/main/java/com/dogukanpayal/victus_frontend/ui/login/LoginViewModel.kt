@@ -32,6 +32,9 @@ class LoginViewModel(
     private val _loginResult = MutableStateFlow<Result<com.dogukanpayal.victus_frontend.data.model.AuthSession>?>(null)
     val loginResult: StateFlow<Result<com.dogukanpayal.victus_frontend.data.model.AuthSession>?> = _loginResult.asStateFlow()
 
+    private val _accessToken = MutableStateFlow("")
+    val accessToken: StateFlow<String> = _accessToken.asStateFlow()
+
     fun onEmailChanged(email: String) {
         _email.value = email
     }
@@ -67,6 +70,11 @@ class LoginViewModel(
             
             _loginResult.value = result
             _isLoading.value = false
+            
+            // AccessToken'ı set et login başarılı olursa
+            result.onSuccess { authSession ->
+                _accessToken.value = authSession.accessToken
+            }
         }
     }
 

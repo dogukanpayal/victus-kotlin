@@ -48,7 +48,10 @@ class MainActivity : ComponentActivity() {
                                 LoginScreen(
                                     viewModel = loginViewModel,
                                     onNavigateToRegister = { currentScreen.value = Screen.Register },
-                                    onNavigateToProfile = { currentScreen.value = Screen.Profile }
+                                    onNavigateToProfile = { authSession ->
+                                        setupToken.value = authSession.accessToken
+                                        currentScreen.value = Screen.Profile
+                                    }
                                 )
                             }
                             Screen.Register -> {
@@ -76,6 +79,7 @@ class MainActivity : ComponentActivity() {
                             Screen.Profile -> {
                                 ProfileScreen(
                                     viewModel = profileViewModel,
+                                    accessToken = setupToken.value,  // ✅ AccessToken geçiliyor
                                     onNavigateBack = { currentScreen.value = Screen.Login },
                                     onNavigateToEditProfile = { currentScreen.value = Screen.EditProfile }
                                 )

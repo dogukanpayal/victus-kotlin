@@ -1,6 +1,5 @@
 package com.dogukanpayal.victus_frontend.ui.profile
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,6 +13,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,10 +33,24 @@ import com.dogukanpayal.victus_frontend.ui.setup_profile.Goal
 @Composable
 fun ProfileScreen(
     viewModel: ProfileViewModel,
+    accessToken: String = "",
     onNavigateBack: () -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    // Load user profile when screen is first displayed
+    androidx.compose.runtime.LaunchedEffect(accessToken) {
+        if (accessToken.isNotEmpty()) {
+            viewModel.loadUserProfile(accessToken)
+        }
+    }
+
+    // Debug logging
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        android.util.Log.d("ProfileScreen", "AccessToken: ${if (accessToken.isNotEmpty()) "Geçildi (${accessToken.take(20)}...)" else "BOŞ!"}")
+        android.util.Log.d("ProfileScreen", "Current uiState - Height: ${uiState.heightCm}, Weight: ${uiState.weightKg}")
+    }
 
     val primaryGreen = Color(0xFF22C55E)
     val darkText = Color(0xFF0F172A)
@@ -152,7 +165,7 @@ fun ProfileScreen(
                     .clip(RoundedCornerShape(16.dp))
             ) {
                 SettingsItem(
-                    icon = Icons.Default.Menu, // Closest to Ruler/Height icon
+                    icon = Icons.Default.Straighten,
                     title = "Boy",
                     value = "${uiState.heightCm} cm",
                     iconBackground = superLightGreen,
@@ -160,7 +173,7 @@ fun ProfileScreen(
                 )
                 HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
                 SettingsItem(
-                    icon = Icons.Default.PlayArrow, // Closest to Weight/Dumbbell icon
+                    icon = Icons.Default.FitnessCenter,
                     title = "Kilo",
                     value = "${uiState.weightKg} kg",
                     iconBackground = superLightGreen,
@@ -168,13 +181,29 @@ fun ProfileScreen(
                 )
                 HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
                 SettingsItem(
-                    icon = Icons.Default.Refresh, // Closest to Fitness Goal icon
+                    icon = Icons.Default.TrackChanges,
                     title = "Fitness Hedefi",
                     value = when(uiState.fitnessGoal) {
                         Goal.LOSE_WEIGHT -> "Kilo Ver"
                         Goal.GAIN_MUSCLE -> "Kas Kütlesi Kazan"
                         Goal.STAY_IN_SHAPE -> "Formda Kal"
                     },
+                    iconBackground = superLightGreen,
+                    iconColor = primaryGreen
+                )
+                HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                SettingsItem(
+                    icon = Icons.Default.Favorite,
+                    title = "BMR",
+                    value = "${uiState.bmr.toInt()} kcal",
+                    iconBackground = superLightGreen,
+                    iconColor = primaryGreen
+                )
+                HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                SettingsItem(
+                    icon = Icons.Default.Restaurant,
+                    title = "Günlük Kalori",
+                    value = "${uiState.dailyCalories.toInt()} kcal",
                     iconBackground = superLightGreen,
                     iconColor = primaryGreen
                 )
@@ -207,7 +236,7 @@ fun ProfileScreen(
                 )
                 HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
                 SettingsItem(
-                    icon = Icons.Default.Info,
+                    icon = Icons.AutoMirrored.Filled.Help,
                     title = "Yardım Merkezi",
                     iconBackground = lightGray,
                     iconColor = darkText
@@ -278,18 +307,19 @@ fun SettingsItem(
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Modern circular icon background
         Box(
             modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(44.dp)
+                .clip(CircleShape)
                 .background(iconBackground),
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "Navigate",
-                tint = darkText,
-                modifier = Modifier.size(20.dp)
+                imageVector = icon,
+                contentDescription = title,
+                tint = iconColor,
+                modifier = Modifier.size(22.dp)
             )
         }
 
@@ -300,7 +330,7 @@ fun SettingsItem(
                 text = title,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFF0F172A)
+                color = darkText
             )
             if (value != null) {
                 Text(
@@ -312,9 +342,10 @@ fun SettingsItem(
         }
 
         Icon(
-            imageVector = Icons.Default.KeyboardArrowRight,
-            contentDescription = null,
-            tint = Color(0xFF94A3B8)
+            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = "Navigate",
+            tint = Color(0xFF94A3B8),
+            modifier = Modifier.size(20.dp)
         )
     }
 }
