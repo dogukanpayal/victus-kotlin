@@ -1,5 +1,6 @@
 package com.dogukanpayal.victus_frontend.ui.setup_profile
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dogukanpayal.victus_frontend.data.model.ProfileResponse
@@ -10,6 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+
+private const val TAG = "SetupProfileViewModel"
 
 enum class Goal {
     LOSE_WEIGHT,
@@ -63,6 +66,7 @@ class SetupProfileViewModel(
 
     fun onGoalSelected(goal: Goal) {
         _selectedGoal.value = goal
+        Log.d(TAG, "Goal selected: ${goalToString(goal)}")
     }
 
     fun onAgeChanged(newAge: Int) {
@@ -77,24 +81,46 @@ class SetupProfileViewModel(
         viewModelScope.launch {
             _updateState.value = ProfileUpdateState.LOADING
 
+            val heightValue = _heightCm.value.roundToInt().toDouble()
+            val weightValue = _weightKg.value.roundToInt().toDouble()
+            val ageValue = _age.value
+            val sexValue = _selectedSex.value
+            val goalValue = goalToString(_selectedGoal.value)
+
+            // Golden Case Logging: 180cm, 75kg, 25 yaş, Erkek, LOSE_WEIGHT
+            Log.d(TAG, "Profile Update Request:")
+            Log.d(TAG, "Height: $heightValue cm")
+            Log.d(TAG, "Weight: $weightValue kg")
+            Log.d(TAG, "Age: $ageValue")
+            Log.d(TAG, "Sex: $sexValue")
+            Log.d(TAG, "Goal: $goalValue")
+            Log.d(TAG, "Expected BMR formula: (10*$weightValue + 6.25*$heightValue - 5*$ageValue + 5 for male)")
+            Log.d(TAG, "Expected BMR ≈ 1755 kcal (for 180cm, 75kg, 25 yaş, Erkek)")
+            Log.d(TAG, "Expected Daily Calories (LOSE_WEIGHT): BMR×1.2−500 = 1755×1.2−500 = 1606 kcal")
 
             val result =
                     profileRepository.updateProfile(
                             accessToken = accessToken,
                             email = email,
-                            heightCm = _heightCm.value.roundToInt().toDouble(),
-                            weightKg = _weightKg.value.roundToInt().toDouble(),
-                            age = _age.value,
-                            sex = _selectedSex.value
+                            heightCm = heightValue,
+                            weightKg = weightValue,
+                            age = ageValue,
+                            sex = sexValue,
+                            goal = goalValue
                     )
 
             result
                     .onSuccess { response ->
+                        Log.d(TAG, "Profile Update Success:")
+                        Log.d(TAG, "BMR: ${response.bmr} kcal")
+                        Log.d(TAG, "Daily Calories: ${response.daily_calories} kcal")
+                        Log.d(TAG, "Goal: ${response.goal}")
                         _profileResponse.value = response
                         _updateState.value = ProfileUpdateState.SUCCESS
                         _errorMessage.value = ""
                     }
                     .onFailure { exception ->
+                        Log.e(TAG, "Profile Update Failed: ${exception.message}", exception)
                         _updateState.value = ProfileUpdateState.ERROR
                         _errorMessage.value =
                                 exception.message ?: "Profil güncellenirken hata oluştu"
@@ -105,5 +131,13 @@ class SetupProfileViewModel(
     fun clearError() {
         _errorMessage.value = ""
         _updateState.value = ProfileUpdateState.IDLE
+    }
+
+    private fun goalToString(goal: Goal): String {
+        return when (goal) {
+            Goal.LOSE_WEIGHT -> "LOSE_WEIGHT"
+            Goal.GAIN_MUSCLE -> "GAIN_MUSCLE"
+            Goal.STAY_IN_SHAPE -> "STAY_FIT"
+        }
     }
 }

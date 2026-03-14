@@ -10,7 +10,8 @@ interface ProfileRepository {
         heightCm: Double,
         weightKg: Double,
         age: Int,
-        sex: String
+        sex: String,
+        goal: String
     ): Result<ProfileResponse>
 }
 
@@ -23,7 +24,8 @@ class ProfileRepositoryImpl(
         heightCm: Double,
         weightKg: Double,
         age: Int,
-        sex: String
+        sex: String,
+        goal: String
     ): Result<ProfileResponse> {
         return try {
             val request = UpdateProfileRequest(
@@ -31,7 +33,8 @@ class ProfileRepositoryImpl(
                 heightCm = heightCm,
                 weightKg = weightKg,
                 age = age,
-                sex = sex
+                sex = sex,
+                goal = goal
             )
             // Backend expects "Bearer <token>"
             val authHeader = "Bearer $accessToken"

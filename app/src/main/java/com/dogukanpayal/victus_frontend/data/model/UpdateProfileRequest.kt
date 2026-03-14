@@ -7,5 +7,8 @@ data class UpdateProfileRequest(
     @Json(name = "height_cm") val heightCm: Double,
     @Json(name = "weight_kg") val weightKg: Double,
     val age: Int,
-    val sex: String
+    val sex: String,
+    val goal: String
 )
+
+

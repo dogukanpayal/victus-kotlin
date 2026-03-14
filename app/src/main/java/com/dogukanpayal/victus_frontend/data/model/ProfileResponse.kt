@@ -9,5 +9,7 @@ data class ProfileResponse(
     val sex: String,
     @Json(name = "height_cm") val heightCm: Double,
     @Json(name = "weight_kg") val weightKg: Double,
-    val bmr: Double
+    val bmr: Double,
+    val goal: String,
+    val daily_calories: Double? = null
 )
