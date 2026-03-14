@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -148,18 +149,28 @@ fun SetupProfileScreen(
                                         enabled = updateState != ProfileUpdateState.LOADING,
                                         colors =
                                                 SliderDefaults.colors(
-                                                        thumbColor = primaryGreen,
-                                                        activeTrackColor = primaryGreen,
-                                                        inactiveTrackColor = lightGray
+                                                        thumbColor = Color(0xFF22C55E),
+                                                        activeTrackColor = Color(0xFF22C55E),
+                                                        inactiveTrackColor = Color(0xFFE5E7EB)
+                                                ),
+                                        track = { sliderState ->
+                                                SliderDefaults.Track(
+                                                        modifier = Modifier.height(4.dp),
+                                                        sliderState = sliderState,
+                                                        colors = SliderDefaults.colors(
+                                                                activeTrackColor = Color(0xFF22C55E),
+                                                                inactiveTrackColor = Color(0xFFE5E7EB)
+                                                        )
                                                 )
+                                        },
+                                        thumb = {
+                                                Box(
+                                                        modifier = Modifier
+                                                                .size(18.dp)
+                                                                .background(color = Color(0xFF22C55E), shape = CircleShape)
+                                                )
+                                        }
                                 )
-                                Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                        Text(text = "100 cm", fontSize = 12.sp, color = grayText)
-                                        Text(text = "250 cm", fontSize = 12.sp, color = grayText)
-                                }
 
                                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -199,18 +210,28 @@ fun SetupProfileScreen(
                                         enabled = updateState != ProfileUpdateState.LOADING,
                                         colors =
                                                 SliderDefaults.colors(
-                                                        thumbColor = primaryGreen,
-                                                        activeTrackColor = primaryGreen,
-                                                        inactiveTrackColor = lightGray
+                                                        thumbColor = Color(0xFF22C55E),
+                                                        activeTrackColor = Color(0xFF22C55E),
+                                                        inactiveTrackColor = Color(0xFFE5E7EB)
+                                                ),
+                                        track = { sliderState ->
+                                                SliderDefaults.Track(
+                                                        modifier = Modifier.height(4.dp),
+                                                        sliderState = sliderState,
+                                                        colors = SliderDefaults.colors(
+                                                                activeTrackColor = Color(0xFF22C55E),
+                                                                inactiveTrackColor = Color(0xFFE5E7EB)
+                                                        )
                                                 )
+                                        },
+                                        thumb = {
+                                                Box(
+                                                        modifier = Modifier
+                                                                .size(18.dp)
+                                                                .background(color = Color(0xFF22C55E), shape = CircleShape)
+                                                )
+                                        }
                                 )
-                                Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                        Text(text = "30 kg", fontSize = 12.sp, color = grayText)
-                                        Text(text = "200 kg", fontSize = 12.sp, color = grayText)
-                                }
 
                                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -337,7 +358,7 @@ fun SetupProfileScreen(
                                 GoalCard(
                                         title = "Kilo Ver",
                                         subtitle = "Yağ yakımı ve formunu koru",
-                                        icon = Icons.Default.ArrowDropDown,
+                                        icon = Icons.AutoMirrored.Filled.TrendingDown,
                                         isSelected = selectedGoal == Goal.LOSE_WEIGHT,
                                         onClick = { viewModel.onGoalSelected(Goal.LOSE_WEIGHT) },
                                         enabled = updateState != ProfileUpdateState.LOADING,
@@ -353,7 +374,7 @@ fun SetupProfileScreen(
                                 GoalCard(
                                         title = "Kas Kütlesi Kazan",
                                         subtitle = "Güçlen ve hacim kazan",
-                                        icon = Icons.Default.Add,
+                                        icon = Icons.Default.FitnessCenter,
                                         isSelected = selectedGoal == Goal.GAIN_MUSCLE,
                                         onClick = { viewModel.onGoalSelected(Goal.GAIN_MUSCLE) },
                                         enabled = updateState != ProfileUpdateState.LOADING,
