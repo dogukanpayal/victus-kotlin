@@ -107,7 +107,7 @@ class MainActivity : ComponentActivity() {
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
                         topBar = {
-                            if (showBottomBar || currentScreen.value == Screen.Profile || currentScreen.value == Screen.EditProfile) {
+                            if (showBottomBar) {
                                 CenterAlignedTopAppBar(
                                     title = {
                                         Text(
@@ -243,7 +243,11 @@ class MainActivity : ComponentActivity() {
                                     viewModel = profileViewModel,
                                     accessToken = setupToken.value,
                                     onNavigateBack = { currentScreen.value = Screen.Home },
-                                    onNavigateToEditProfile = { currentScreen.value = Screen.EditProfile }
+                                    onNavigateToEditProfile = { currentScreen.value = Screen.EditProfile },
+                                    onLogout = {
+                                        setupToken.value = ""
+                                        currentScreen.value = Screen.Login
+                                    }
                                 )
 
                                 Screen.EditProfile -> {

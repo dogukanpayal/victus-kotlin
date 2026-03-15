@@ -37,7 +37,8 @@ fun ProfileScreen(
     viewModel: ProfileViewModel,
     accessToken: String = "",
     onNavigateBack: () -> Unit = {},
-    onNavigateToEditProfile: () -> Unit = {}
+    onNavigateToEditProfile: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -268,7 +269,7 @@ fun ProfileScreen(
 
             // Logout Button
             OutlinedButton(
-                onClick = viewModel::onLogoutClicked,
+                onClick = onLogout,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
