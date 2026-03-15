@@ -87,7 +87,8 @@ class MainActivity : ComponentActivity() {
                             Screen.EditProfile -> {
                                 EditProfileScreen(
                                     viewModel = editProfileViewModel,
-                                    onNavigateBack = { currentScreen.value = Screen.Profile }
+                                    onNavigateBack = { currentScreen.value = Screen.Profile },
+                                    accessToken = setupToken.value  // ✅ AccessToken geçiliyor
                                 )
                             }
                         }
