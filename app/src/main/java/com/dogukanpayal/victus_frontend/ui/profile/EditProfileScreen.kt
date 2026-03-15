@@ -43,9 +43,9 @@ fun EditProfileScreen(
     val primaryGreen = Color(0xFF22C55E)
     val darkText = Color(0xFF0F172A)
     val grayText = Color(0xFF64748B)
-    val lightGray = Color(0xFFF1F5F9)
-    val superLightGreen = Color(0xFFF0FDF4)
+    val lightGray = Color(0xFFF8FAFC)
     val mediumGray = Color(0xFF94A3B8)
+    val borderGray = Color(0xFFE2E8F0)
 
     // Load profile when screen is opened
     LaunchedEffect(accessToken) {
@@ -114,7 +114,6 @@ fun EditProfileScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .border(width = 4.dp, color = superLightGreen, shape = CircleShape)
                             .clip(CircleShape)
                             .background(lightGray),
                         contentAlignment = Alignment.Center
@@ -126,32 +125,31 @@ fun EditProfileScreen(
                             tint = mediumGray
                         )
                     }
-                    
-                    // Camera Icon Overlay
+
+                    // Camera Icon Overlay - Green circular background with white camera icon
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(40.dp)
                             .clip(CircleShape)
-                            .background(primaryGreen)
-                            .border(2.dp, Color.White, CircleShape),
+                            .background(primaryGreen),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Add, // Using Add as camera icon proxy
+                            imageVector = Icons.Default.AddAPhoto,
                             contentDescription = "Change Photo",
                             tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text = "FOTOĞRAFI DEĞİŞTİR",
                     color = primaryGreen,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.clickable { viewModel.onChangePhotoClicked() }
                 )
 
@@ -224,14 +222,14 @@ fun EditProfileScreen(
                         color = grayText,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    
+
                     var expanded by remember { mutableStateOf(false) }
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(56.dp)
-                            .background(lightGray.copy(alpha = 0.5f), RoundedCornerShape(28.dp))
-                            .border(1.dp, lightGray, RoundedCornerShape(28.dp))
+                            .background(lightGray, RoundedCornerShape(16.dp))
+                            .border(1.dp, borderGray, RoundedCornerShape(16.dp))
                             .clickable { expanded = true }
                             .padding(horizontal = 20.dp),
                         contentAlignment = Alignment.CenterStart
@@ -318,7 +316,7 @@ fun EditProfileScreen(
                         Surface(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp)),
+                                .clip(RoundedCornerShape(16.dp)),
                             color = if (uiState.updateState == EditProfileUpdateState.ERROR) {
                                 Color(0xFFFFEBEE)
                             } else {
@@ -369,8 +367,8 @@ fun EditProfileScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(60.dp),
-                        shape = RoundedCornerShape(30.dp),
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = primaryGreen,
                             disabledContainerColor = primaryGreen.copy(alpha = 0.6f)
@@ -429,7 +427,7 @@ fun EditProfileInputField(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(16.dp),
             leadingIcon = icon?.let {
                 {
                     Icon(
@@ -442,10 +440,10 @@ fun EditProfileInputField(
             },
             placeholder = { Text(text = placeholder, color = Color(0xFF94A3B8)) },
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = lightGray.copy(alpha = 0.5f),
-                unfocusedContainerColor = lightGray.copy(alpha = 0.5f),
-                focusedIndicatorColor = lightGray,
-                unfocusedIndicatorColor = lightGray,
+                focusedContainerColor = lightGray,
+                unfocusedContainerColor = lightGray,
+                focusedIndicatorColor = Color(0xFFE2E8F0),
+                unfocusedIndicatorColor = Color(0xFFE2E8F0),
                 cursorColor = primaryGreen
             ),
             singleLine = true
