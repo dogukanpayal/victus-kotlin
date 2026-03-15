@@ -1,5 +1,8 @@
 package com.dogukanpayal.victus_frontend.ui.profile
 
+import android.content.Context
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,10 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.dogukanpayal.victus_frontend.ui.setup_profile.Goal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -95,6 +101,15 @@ fun EditProfileScreen(
                 CircularProgressIndicator(color = primaryGreen)
             }
         } else {
+            // Image picker launcher
+            val imagePickerLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.GetContent()
+            ) { uri ->
+                if (uri != null) {
+                    viewModel.onPhotoSelected(uri.toString())
+                }
+            }
+
             // Content
             Column(
                 modifier = Modifier
@@ -107,10 +122,12 @@ fun EditProfileScreen(
 
                 // Profile Image with Camera Overlay
                 Box(
-                    modifier = Modifier.size(120.dp),
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clickable { imagePickerLauncher.launch("image/*") },
                     contentAlignment = Alignment.BottomEnd
                 ) {
-                    // Background Profile Icon
+                    // Background Profile Image or Icon
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -118,12 +135,37 @@ fun EditProfileScreen(
                             .background(lightGray),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile Picture",
-                            modifier = Modifier.size(80.dp),
-                            tint = mediumGray
-                        )
+                        if (!uiState.selectedImageUri.isNullOrEmpty()) {
+                            // Show selected image
+                            AsyncImage(
+                                model = uiState.selectedImageUri,
+                                contentDescription = "Selected Profile Picture",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop,
+                                alignment = Alignment.Center
+                            )
+                        } else if (!uiState.avatarUrl.isNullOrEmpty()) {
+                            // Show uploaded avatar URL
+                            AsyncImage(
+                                model = uiState.avatarUrl,
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop,
+                                alignment = Alignment.Center
+                            )
+                        } else {
+                            // Show placeholder icon
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier.size(80.dp),
+                                tint = mediumGray
+                            )
+                        }
                     }
 
                     // Camera Icon Overlay - Green circular background with white camera icon
@@ -150,7 +192,7 @@ fun EditProfileScreen(
                     color = primaryGreen,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable { viewModel.onChangePhotoClicked() }
+                    modifier = Modifier.clickable { imagePickerLauncher.launch("image/*") }
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))

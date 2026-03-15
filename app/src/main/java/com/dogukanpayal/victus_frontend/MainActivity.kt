@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.Box
@@ -59,6 +60,7 @@ class MainActivity : ComponentActivity() {
                 // User Data States
                 val userName = remember { mutableStateOf("Yükleniyor...") }
                 val userEmail = remember { mutableStateOf("") }
+                val userAvatarUrl = remember { mutableStateOf<String?>(null) }
 
                 val setupToken = remember { mutableStateOf("") }
                 val setupEmail = remember { mutableStateOf("") }
@@ -88,6 +90,7 @@ class MainActivity : ComponentActivity() {
                             MainDrawerContent(
                                 userName = userName.value,
                                 userEmail = userEmail.value,
+                                userAvatarUrl = userAvatarUrl.value,
                                 onNotificationsClick = { /* Handle Notifications */ },
                                 onSettingsClick = {
                                     scope.launch { drawerState.close() }
@@ -146,6 +149,7 @@ class MainActivity : ComponentActivity() {
                                     result.onSuccess { profile ->
                                         userName.value = profile.fullName ?: "İsimsiz Kullanıcı"
                                         userEmail.value = profile.email
+                                        userAvatarUrl.value = profile.avatarUrl
                                     }
                                 }
                             }
@@ -154,7 +158,8 @@ class MainActivity : ComponentActivity() {
                             val registerViewModel = remember { RegisterViewModel() }
                             val setupProfileViewModel = remember { SetupProfileViewModel() }
                             val profileViewModel = remember { ProfileViewModel() }
-                            val editProfileViewModel = remember { EditProfileViewModel() }
+                            val context = LocalContext.current.applicationContext
+                            val editProfileViewModel = remember { EditProfileViewModel(context = context) }
                             val homeViewModel = remember { HomeViewModel() }
                             val workoutViewModel = remember { WorkoutViewModel() }
                             val exerciseViewModel = remember { ExerciseViewModel() }
@@ -241,11 +246,26 @@ class MainActivity : ComponentActivity() {
                                     onNavigateToEditProfile = { currentScreen.value = Screen.EditProfile }
                                 )
 
-                                Screen.EditProfile -> EditProfileScreen(
-                                    viewModel = editProfileViewModel,
-                                    accessToken = setupToken.value,
-                                    onNavigateBack = { currentScreen.value = Screen.Profile }
-                                )
+                                Screen.EditProfile -> {
+                                    EditProfileScreen(
+                                        viewModel = editProfileViewModel,
+                                        accessToken = setupToken.value,
+                                        onNavigateBack = {
+                                            // Geri dönüş sırasında profil verisini yenile
+                                            if (setupToken.value.isNotEmpty()) {
+                                                scope.launch {
+                                                    val result = profileRepository.getProfile(setupToken.value)
+                                                    result.onSuccess { profile ->
+                                                        userName.value = profile.fullName ?: "İsimsiz Kullanıcı"
+                                                        userEmail.value = profile.email
+                                                        userAvatarUrl.value = profile.avatarUrl
+                                                    }
+                                                }
+                                            }
+                                            currentScreen.value = Screen.Profile
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

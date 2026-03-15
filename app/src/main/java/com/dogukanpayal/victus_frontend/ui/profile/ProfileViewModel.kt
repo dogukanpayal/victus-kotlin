@@ -21,6 +21,7 @@ data class ProfileState(
     val bmr: Double = 0.0,
     val dailyCalories: Double = 0.0,
     val fitnessGoal: Goal = Goal.LOSE_WEIGHT,
+    val avatarUrl: String? = null,
     val version: String = "2.4.1 (BUILD 890)",
     val isLoading: Boolean = true
 )
@@ -74,6 +75,7 @@ class ProfileViewModel(
                         bmr = profileResponse.bmr,
                         dailyCalories = profileResponse.dailyCalories ?: 0.0,
                         fitnessGoal = goalEnum,
+                        avatarUrl = profileResponse.avatarUrl,
                         version = "2.4.1 (BUILD 890)",
                         isLoading = false
                     )

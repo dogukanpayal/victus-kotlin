@@ -107,7 +107,8 @@ class SetupProfileViewModel(
                             weightKg = weightValue,
                             age = ageValue,
                             sex = sexValue,
-                            goal = goalValue
+                            goal = goalValue,
+                            avatarUrl = null
                     )
 
             result

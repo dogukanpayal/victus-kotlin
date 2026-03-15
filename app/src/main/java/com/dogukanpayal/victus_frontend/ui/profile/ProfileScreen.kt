@@ -23,10 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.dogukanpayal.victus_frontend.ui.setup_profile.Goal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,18 +111,37 @@ fun ProfileScreen(
             Box(
                 modifier = Modifier
                     .size(120.dp)
-                    .border(width = 4.dp, color = superLightGreen, shape = CircleShape),
+                    .clip(CircleShape)
+                    .background(lightGray),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Profile Picture",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .background(lightGray),
-                    tint = grayText
-                )
+                if (!uiState.avatarUrl.isNullOrEmpty()) {
+                    // Show uploaded avatar URL
+                    AsyncImage(
+                        model = uiState.avatarUrl,
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop,
+                        alignment = Alignment.Center,
+                        onError = {}
+                    )
+                    // If AsyncImage fails to load, the icon below will be shown
+                }
+                
+                // Always show placeholder icon if no avatar URL
+                if (uiState.avatarUrl.isNullOrEmpty()) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(CircleShape)
+                            .background(lightGray),
+                        tint = grayText
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

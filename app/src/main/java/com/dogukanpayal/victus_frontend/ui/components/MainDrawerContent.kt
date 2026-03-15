@@ -1,14 +1,13 @@
 package com.dogukanpayal.victus_frontend.ui.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -18,16 +17,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.dogukanpayal.victus_frontend.R
+import coil3.compose.AsyncImage
 
 @Composable
 fun MainDrawerContent(
     userName: String,
     userEmail: String,
+    userAvatarUrl: String? = null,
     onNotificationsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onLogoutClick: () -> Unit
@@ -54,13 +53,33 @@ fun MainDrawerContent(
                 .background(lightGreenBg),
             contentAlignment = Alignment.Center
         ) {
-            // Placeholder Image - using a generic person if drawable not found
-            Icon(
-                imageVector = Icons.Default.Settings, // Replace with actual profile image logic
-                contentDescription = "Profil Fotoğrafı",
-                tint = primaryGreen,
-                modifier = Modifier.size(40.dp)
-            )
+            if (!userAvatarUrl.isNullOrEmpty()) {
+                // Show uploaded avatar image
+                AsyncImage(
+                    model = userAvatarUrl,
+                    contentDescription = "Profil Fotoğrafı",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(20.dp)),
+                    contentScale = ContentScale.Crop,
+                    alignment = Alignment.Center,
+                    onSuccess = {},
+                    onError = {},
+                    onLoading = {}
+                )
+                // Fallback: Show Person icon if image fails to load
+                // This is handled by checking if userAvatarUrl is empty
+            }
+            
+            // Show placeholder person icon if no avatar URL
+            if (userAvatarUrl.isNullOrEmpty()) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Profil Fotoğrafı",
+                    tint = primaryGreen,
+                    modifier = Modifier.size(40.dp)
+                )
+            }
         }
         
         Spacer(modifier = Modifier.height(16.dp))
@@ -117,7 +136,7 @@ fun MainDrawerContent(
                 horizontalArrangement = Arrangement.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.ExitToApp,
+                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                     contentDescription = null,
                     modifier = Modifier.size(24.dp)
                 )

@@ -3,6 +3,20 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+import java.io.File
+import java.util.Properties
+
+// local.properties dosyasını oku
+val localProperties = Properties()
+val localPropertiesFile = File(rootDir, "local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+
+// Supabase credentials'ını al
+val supabaseUrl = localProperties.getProperty("SUPABASE_URL", "https://your-project.supabase.co")
+val supabaseKey = localProperties.getProperty("SUPABASE_KEY", "your-anon-key")
+
 android {
     namespace = "com.dogukanpayal.victus_frontend"
     compileSdk {
@@ -19,6 +33,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // BuildConfig alanlarını ekle
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_KEY", "\"$supabaseKey\"")
     }
 
     buildTypes {
@@ -36,6 +54,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -62,8 +81,9 @@ dependencies {
     // Moshi (JSON)
     implementation(libs.moshi)
     
-    // Navigation
-    implementation(libs.androidx.navigation.compose)
+    // Coil (Image Loading)
+    implementation("io.coil-kt.coil3:coil-compose:3.0.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.0")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
