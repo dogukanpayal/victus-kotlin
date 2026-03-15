@@ -77,7 +77,7 @@ class SetupProfileViewModel(
         _selectedSex.value = sex
     }
 
-    fun onContinueClicked(accessToken: String, email: String) {
+    fun onContinueClicked(accessToken: String, email: String, fullName: String) {
         viewModelScope.launch {
             _updateState.value = ProfileUpdateState.LOADING
 
@@ -102,7 +102,7 @@ class SetupProfileViewModel(
                     profileRepository.updateProfile(
                             accessToken = accessToken,
                             email = email,
-                            fullName = email.substringBefore("@"),  // Email'den ad çıkar
+                            fullName = fullName,
                             heightCm = heightValue,
                             weightKg = weightValue,
                             age = ageValue,

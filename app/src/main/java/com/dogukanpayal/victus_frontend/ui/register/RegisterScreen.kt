@@ -41,7 +41,7 @@ private val grayText = Color(0xFF64748B)
 fun RegisterScreen(
     viewModel: RegisterViewModel,
     onNavigateToLogin: () -> Unit = {},
-    onNavigateToSetup: (accessToken: String, email: String) -> Unit = { _, _ -> }
+    onNavigateToSetup: (accessToken: String, email: String, fullName: String) -> Unit = { _, _, _ -> }
 ) {
     val fullName by viewModel.fullName.collectAsState()
     val email by viewModel.email.collectAsState()
@@ -52,7 +52,7 @@ fun RegisterScreen(
 
     LaunchedEffect(registrationResult) {
         registrationResult?.onSuccess { session ->
-            onNavigateToSetup(session.accessToken, session.email)
+            onNavigateToSetup(session.accessToken, session.email, fullName)
             viewModel.clearResult()
         }
     }

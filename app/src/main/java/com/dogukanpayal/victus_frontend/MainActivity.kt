@@ -64,6 +64,7 @@ class MainActivity : ComponentActivity() {
 
                 val setupToken = remember { mutableStateOf("") }
                 val setupEmail = remember { mutableStateOf("") }
+                val setupFullName = remember { mutableStateOf("") }
                 val profileRepository = remember { ProfileRepositoryImpl() }
 
                 val showBottomBar = currentScreen.value in listOf(
@@ -207,9 +208,10 @@ class MainActivity : ComponentActivity() {
                                 Screen.Register -> RegisterScreen(
                                     viewModel = registerViewModel,
                                     onNavigateToLogin = { currentScreen.value = Screen.Login },
-                                    onNavigateToSetup = { token, email ->
+                                    onNavigateToSetup = { token, email, name ->
                                         setupToken.value = token
                                         setupEmail.value = email
+                                        setupFullName.value = name
                                         currentScreen.value = Screen.SetupProfile
                                     }
                                 )
@@ -219,6 +221,7 @@ class MainActivity : ComponentActivity() {
                                     onNavigateBack = { currentScreen.value = Screen.Login },
                                     accessToken = setupToken.value,
                                     email = setupEmail.value,
+                                    fullName = setupFullName.value,
                                     onProfileUpdateSuccess = { currentScreen.value = Screen.Home }
                                 )
 

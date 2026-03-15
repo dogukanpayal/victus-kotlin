@@ -149,25 +149,12 @@ fun LoginScreen(
 
         // Password Field
         Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Şifre",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = darkText
-                )
-                Text(
-                    text = "Şifremi Unuttum",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = primaryGreen,
-                    modifier = Modifier.clickable { /* Handle click */ }
-                )
-            }
+            Text(
+                text = "Şifre",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = darkText
+            )
             Spacer(modifier = Modifier.height(8.dp))
             OutlinedTextField(
                 value = password,

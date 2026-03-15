@@ -42,6 +42,7 @@ fun SetupProfileScreen(
         onNavigateBack: () -> Unit = {},
         accessToken: String = "",
         email: String = "",
+        fullName: String = "",
         onProfileUpdateSuccess: () -> Unit = {}
 ) {
         val heightCm by viewModel.heightCm.collectAsState()
@@ -453,7 +454,7 @@ fun SetupProfileScreen(
                                 // Continue Button
                                 Button(
                                         onClick = {
-                                                viewModel.onContinueClicked(accessToken, email)
+                                                viewModel.onContinueClicked(accessToken, email, fullName)
                                         },
                                         modifier = Modifier.fillMaxWidth().height(56.dp),
                                         shape = RoundedCornerShape(28.dp),
