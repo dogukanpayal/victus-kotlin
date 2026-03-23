@@ -29,6 +29,9 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun ScannerScreen(viewModel: ScannerViewModel) {
+    val lastScan by viewModel.lastScanResult.collectAsState()
+    val isAnalyzing by viewModel.isAnalyzing.collectAsState()
+
     val primaryGreen = Color(0xFF22C55E)
     val lightGreenBg = Color(0xFFF0FDF4)
     val surfaceWhite = Color.White
@@ -38,7 +41,7 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF8FAFC)) // Subtle off-white background
+            .background(Color(0xFFF8FAFC))
             .padding(top = 24.dp, start = 24.dp, end = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -50,9 +53,9 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
             color = textDark,
             textAlign = TextAlign.Center
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Text(
             text = "AI teknolojisi ile saniyeler içinde kalori değerlerini öğrenin",
             fontSize = 14.sp,
@@ -69,7 +72,7 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
                 .weight(1f)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(32.dp))
-                .background(Color.Gray.copy(alpha = 0.1f)) // Placeholder for camera
+                .background(Color.Gray.copy(alpha = 0.1f))
                 .border(2.dp, primaryGreen.copy(alpha = 0.3f), RoundedCornerShape(32.dp)),
             contentAlignment = Alignment.Center
         ) {
@@ -84,7 +87,6 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                // Here we would put the 'food_scan_placeholder'
                 Text(
                     text = "🥗",
                     fontSize = 120.sp
@@ -93,7 +95,7 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
 
             // Scanning Frame Corners
             ScanningOverlay(primaryGreen)
-            
+
             // Scanning Line Animation
             val infiniteTransition = rememberInfiniteTransition(label = "scanning")
             val yOffset by infiniteTransition.animateFloat(
@@ -105,7 +107,7 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
                 ),
                 label = "yOffset"
             )
-            
+
             BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                 Box(
                     modifier = Modifier
@@ -121,7 +123,7 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Action Buttons
         Row(
@@ -129,14 +131,19 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            ControlButton(icon = Icons.Default.Home, label = "Galeri", primaryGreen = primaryGreen)
-            
+            ControlButton(
+                icon = Icons.Default.Home,
+                label = "Galeri",
+                primaryGreen = primaryGreen,
+                onClick = { viewModel.onGalleryClick() }
+            )
+
             // Main Shutter Button
             Surface(
                 modifier = Modifier
                     .size(80.dp)
                     .clip(CircleShape)
-                    .clickable { /* Take Photo */ },
+                    .clickable { viewModel.onCapturePhoto() },
                 color = primaryGreen,
                 shadowElevation = 8.dp
             ) {
@@ -147,7 +154,7 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
                             .border(4.dp, Color.White.copy(alpha = 0.5f), CircleShape)
                     )
                     Icon(
-                        imageVector = Icons.Default.PlayArrow, // Camera icon placeholder
+                        imageVector = Icons.Default.PlayArrow,
                         contentDescription = "Capture",
                         tint = Color.White,
                         modifier = Modifier.size(32.dp)
@@ -155,16 +162,84 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
                 }
             }
 
-            ControlButton(icon = Icons.Default.Settings, label = "Flaş", primaryGreen = primaryGreen)
+            ControlButton(
+                icon = Icons.Default.Settings,
+                label = "Flaş",
+                primaryGreen = primaryGreen,
+                onClick = { /* Flash toggle */ }
+            )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Last Scan Result Card
+        lastScan?.let { scan ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = surfaceWhite),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(2.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFFDCFCE7)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("✅", fontSize = 20.sp)
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Son Tarama",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = primaryGreen,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            text = scan.foodName,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = textDark
+                        )
+                        Text(
+                            text = "${scan.portion} porsiyon",
+                            fontSize = 12.sp,
+                            color = textGray
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = "${scan.calories}",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = textDark
+                        )
+                        Text(
+                            text = "kcal",
+                            fontSize = 11.sp,
+                            color = textGray
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Tip Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 100.dp), // Padding for bottom nav
+                .padding(bottom = 100.dp),
             colors = CardDefaults.cardColors(containerColor = lightGreenBg),
             shape = RoundedCornerShape(20.dp),
             elevation = CardDefaults.cardElevation(0.dp)
@@ -197,22 +272,21 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
 @Composable
 fun ScanningOverlay(color: Color) {
     Box(modifier = Modifier.fillMaxSize().padding(24.dp)) {
-        // Corners
         val cornerSize = 40.dp
         val strokeWidth = 4.dp
-        
+
         // Top Left
         Box(modifier = Modifier.align(Alignment.TopStart).size(cornerSize)
             .border(width = strokeWidth, color = color, shape = RoundedCornerShape(topStart = 12.dp, bottomStart = 0.dp, topEnd = 0.dp, bottomEnd = 0.dp)))
-        
+
         // Top Right
         Box(modifier = Modifier.align(Alignment.TopEnd).size(cornerSize)
             .border(width = strokeWidth, color = color, shape = RoundedCornerShape(topEnd = 12.dp, topStart = 0.dp, bottomStart = 0.dp, bottomEnd = 0.dp)))
-        
+
         // Bottom Left
         Box(modifier = Modifier.align(Alignment.BottomStart).size(cornerSize)
             .border(width = strokeWidth, color = color, shape = RoundedCornerShape(bottomStart = 12.dp, topStart = 0.dp, topEnd = 0.dp, bottomEnd = 0.dp)))
-        
+
         // Bottom Right
         Box(modifier = Modifier.align(Alignment.BottomEnd).size(cornerSize)
             .border(width = strokeWidth, color = color, shape = RoundedCornerShape(bottomEnd = 12.dp, topStart = 0.dp, topEnd = 0.dp, bottomStart = 0.dp)))
@@ -220,13 +294,13 @@ fun ScanningOverlay(color: Color) {
 }
 
 @Composable
-fun ControlButton(icon: ImageVector, label: String, primaryGreen: Color) {
+fun ControlButton(icon: ImageVector, label: String, primaryGreen: Color, onClick: () -> Unit = {}) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Surface(
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .clickable { /* Action */ },
+                .clickable { onClick() },
             color = Color.White,
             shadowElevation = 2.dp
         ) {
