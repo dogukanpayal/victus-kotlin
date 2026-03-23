@@ -1,10 +1,13 @@
 package com.dogukanpayal.victus_frontend.ui.scanner
 
+import android.content.Context
 import android.net.Uri
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.File
 
 class ScannerViewModel : ViewModel() {
 
@@ -17,6 +20,10 @@ class ScannerViewModel : ViewModel() {
     private val _lastScanResult = MutableStateFlow<LastScanResult?>(null)
     val lastScanResult: StateFlow<LastScanResult?> = _lastScanResult.asStateFlow()
 
+    // Kamera için geçici URI (FileProvider tarafından oluşturulur)
+    private val _pendingCameraUri = MutableStateFlow<Uri?>(null)
+    val pendingCameraUri: StateFlow<Uri?> = _pendingCameraUri.asStateFlow()
+
     init {
         // Mock son tarama sonucu
         _lastScanResult.value = LastScanResult(
@@ -27,28 +34,48 @@ class ScannerViewModel : ViewModel() {
     }
 
     /**
-     * Galeri veya kameradan fotoğraf seçildiğinde çağrılır.
-     * İleride bu URI backend'e gönderilecek: POST /api/nutrition/analyze
+     * Kamera ile fotoğraf çekmeden önce geçici bir URI oluşturur.
+     * FileProvider kullanarak cache dizininde güvenli bir dosya oluşturur.
+     */
+    fun createPhotoUri(context: Context): Uri {
+        val photoDir = File(context.cacheDir, "camera_photos")
+        photoDir.mkdirs()
+        val photoFile = File(photoDir, "photo_${System.currentTimeMillis()}.jpg")
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            photoFile
+        )
+        _pendingCameraUri.value = uri
+        return uri
+    }
+
+    /**
+     * Kamera fotoğraf çektikten sonra çağrılır.
+     * success = true ise fotoğraf başarıyla çekildi, URI set edilir.
+     */
+    fun onPhotoTaken(success: Boolean) {
+        if (success) {
+            _selectedImageUri.value = _pendingCameraUri.value
+            // TODO: İleride analyzeImage() çağrılacak — POST /api/nutrition/analyze
+        }
+        _pendingCameraUri.value = null
+    }
+
+    /**
+     * Galeriden fotoğraf seçildiğinde çağrılır.
      */
     fun onImageSelected(uri: Uri) {
         _selectedImageUri.value = uri
-        // TODO: analyzeImage(uri) - Backend'e fotoğraf gönderme
+        // TODO: İleride analyzeImage() çağrılacak — POST /api/nutrition/analyze
     }
 
     /**
-     * Kamera butonuna basıldığında çağrılır.
-     * İleride CameraX veya Intent ile fotoğraf çekme akışını başlatır.
+     * Seçilen fotoğrafı temizler (tekrar çekim için)
      */
-    fun onCapturePhoto() {
-        // TODO: Kamera izni kontrolü + fotoğraf çekme akışı
-    }
-
-    /**
-     * Galeri butonuna basıldığında çağrılır.
-     * İleride galeri seçici açılır.
-     */
-    fun onGalleryClick() {
-        // TODO: Galeri izni kontrolü + fotoğraf seçme akışı
+    fun clearSelectedImage() {
+        _selectedImageUri.value = null
+        _isAnalyzing.value = false
     }
 
     /**

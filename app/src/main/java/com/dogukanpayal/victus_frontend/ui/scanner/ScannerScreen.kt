@@ -1,5 +1,10 @@
 package com.dogukanpayal.victus_frontend.ui.scanner
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,12 +13,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,21 +26,78 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import coil3.compose.AsyncImage
 
 @Composable
 fun ScannerScreen(viewModel: ScannerViewModel) {
+    val context = LocalContext.current
     val lastScan by viewModel.lastScanResult.collectAsState()
     val isAnalyzing by viewModel.isAnalyzing.collectAsState()
+    val selectedImageUri by viewModel.selectedImageUri.collectAsState()
 
     val primaryGreen = Color(0xFF22C55E)
     val lightGreenBg = Color(0xFFF0FDF4)
     val surfaceWhite = Color.White
     val textDark = Color(0xFF0F172A)
     val textGray = Color(0xFF64748B)
+
+    // ═══════════════════════════════════════════
+    // Gallery Launcher (PickVisualMedia - izin gerektirmez)
+    // ═══════════════════════════════════════════
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let { viewModel.onImageSelected(it) }
+    }
+
+    // ═══════════════════════════════════════════
+    // Camera Launcher (TakePicture)
+    // ═══════════════════════════════════════════
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        viewModel.onPhotoTaken(success)
+    }
+
+    // ═══════════════════════════════════════════
+    // Camera Permission Launcher
+    // ═══════════════════════════════════════════
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            val uri = viewModel.createPhotoUri(context)
+            cameraLauncher.launch(uri)
+        }
+    }
+
+    // Kamera butonuna basıldığında çağrılan fonksiyon
+    fun launchCamera() {
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context, Manifest.permission.CAMERA
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (hasPermission) {
+            val uri = viewModel.createPhotoUri(context)
+            cameraLauncher.launch(uri)
+        } else {
+            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    // Galeri butonuna basıldığında çağrılan fonksiyon
+    fun launchGallery() {
+        galleryLauncher.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -66,66 +127,146 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Scanning Frame
+        // ═══════════════════════════════════════════
+        // Scanning Frame / Selected Image
+        // ═══════════════════════════════════════════
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(32.dp))
                 .background(Color.Gray.copy(alpha = 0.1f))
-                .border(2.dp, primaryGreen.copy(alpha = 0.3f), RoundedCornerShape(32.dp)),
+                .border(
+                    2.dp,
+                    if (selectedImageUri != null) primaryGreen else primaryGreen.copy(alpha = 0.3f),
+                    RoundedCornerShape(32.dp)
+                ),
             contentAlignment = Alignment.Center
         ) {
-            // Placeholder Image Simulation
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Brush.linearGradient(
-                            listOf(Color(0xFF134E4A), Color(0xFF0F766E))
-                        )
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "🥗",
-                    fontSize = 120.sp
+            if (selectedImageUri != null) {
+                // Seçilen fotoğrafı göster
+                AsyncImage(
+                    model = selectedImageUri,
+                    contentDescription = "Seçilen Yemek Fotoğrafı",
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(32.dp)),
+                    contentScale = ContentScale.Crop
                 )
-            }
 
-            // Scanning Frame Corners
-            ScanningOverlay(primaryGreen)
-
-            // Scanning Line Animation
-            val infiniteTransition = rememberInfiniteTransition(label = "scanning")
-            val yOffset by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 1f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(2000, easing = LinearEasing),
-                    repeatMode = RepeatMode.Reverse
-                ),
-                label = "yOffset"
-            )
-
-            BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                // Temizle butonu (sağ üst köşe)
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(2.dp)
-                        .offset(y = maxHeight * yOffset)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(Color.Transparent, primaryGreen, Color.Transparent)
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable { viewModel.clearSelectedImage() },
+                        color = Color.Black.copy(alpha = 0.5f),
+                        shape = CircleShape
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Fotoğrafı Kaldır",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
                             )
-                        )
+                        }
+                    }
+                }
+
+                // Fotoğraf seçildi bilgi bandı (alt kısım)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.BottomCenter
+                ) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp)),
+                        color = Color.Black.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "📸",
+                                fontSize = 16.sp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Fotoğraf hazır — analiz için gönderilecek",
+                                fontSize = 13.sp,
+                                color = Color.White,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            } else {
+                // Placeholder (fotoğraf seçilmemiş)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.linearGradient(
+                                listOf(Color(0xFF134E4A), Color(0xFF0F766E))
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "🥗",
+                        fontSize = 120.sp
+                    )
+                }
+
+                // Scanning Frame Corners
+                ScanningOverlay(primaryGreen)
+
+                // Scanning Line Animation
+                val infiniteTransition = rememberInfiniteTransition(label = "scanning")
+                val yOffset by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(2000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "yOffset"
                 )
+
+                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .offset(y = maxHeight * yOffset)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color.Transparent, primaryGreen, Color.Transparent)
+                                )
+                            )
+                    )
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // ═══════════════════════════════════════════
         // Action Buttons
+        // ═══════════════════════════════════════════
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -135,7 +276,7 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
                 icon = Icons.Default.Home,
                 label = "Galeri",
                 primaryGreen = primaryGreen,
-                onClick = { viewModel.onGalleryClick() }
+                onClick = { launchGallery() }
             )
 
             // Main Shutter Button
@@ -143,7 +284,7 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
                 modifier = Modifier
                     .size(80.dp)
                     .clip(CircleShape)
-                    .clickable { viewModel.onCapturePhoto() },
+                    .clickable { launchCamera() },
                 color = primaryGreen,
                 shadowElevation = 8.dp
             ) {
@@ -154,7 +295,7 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
                             .border(4.dp, Color.White.copy(alpha = 0.5f), CircleShape)
                     )
                     Icon(
-                        imageVector = Icons.Default.PlayArrow,
+                        imageVector = if (selectedImageUri != null) Icons.Default.Refresh else Icons.Default.PlayArrow,
                         contentDescription = "Capture",
                         tint = Color.White,
                         modifier = Modifier.size(32.dp)
