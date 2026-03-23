@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dogukanpayal.victus_frontend.data.model.SaveNutritionRequest
 import com.dogukanpayal.victus_frontend.data.repository.NutritionRepository
 import com.dogukanpayal.victus_frontend.data.repository.NutritionRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +25,9 @@ class ScannerViewModel(
     private val _isAnalyzing = MutableStateFlow(false)
     val isAnalyzing: StateFlow<Boolean> = _isAnalyzing.asStateFlow()
 
+    private val _isSaving = MutableStateFlow(false)
+    val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
+
     private val _lastScanResult = MutableStateFlow<LastScanResult?>(null)
     val lastScanResult: StateFlow<LastScanResult?> = _lastScanResult.asStateFlow()
 
@@ -32,6 +36,9 @@ class ScannerViewModel(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
+
+    private val _saveSuccess = MutableStateFlow(false)
+    val saveSuccess: StateFlow<Boolean> = _saveSuccess.asStateFlow()
 
     // Kamera için geçici URI
     private val _pendingCameraUri = MutableStateFlow<Uri?>(null)
@@ -42,7 +49,10 @@ class ScannerViewModel(
         _lastScanResult.value = LastScanResult(
             foodName = "Mercimek Çorbası",
             calories = 240,
-            baseCalories = 160, // 240 / 1.5
+            baseCalories = 160,
+            protein = 12f,
+            carbs = 30f,
+            fat = 5f,
             portion = 1.5f
         )
     }
@@ -59,6 +69,7 @@ class ScannerViewModel(
         viewModelScope.launch {
             _isAnalyzing.value = true
             _error.value = null
+            _saveSuccess.value = false
             
             val result = repository.analyzeImage(token, uri, context)
             
@@ -67,6 +78,9 @@ class ScannerViewModel(
                     foodName = response.foodName,
                     calories = response.calories,
                     baseCalories = (response.calories / response.portionSize).toInt(),
+                    protein = response.protein,
+                    carbs = response.carbs,
+                    fat = response.fat,
                     portion = response.portionSize
                 )
                 _isAnalyzing.value = false
@@ -79,12 +93,19 @@ class ScannerViewModel(
     }
 
     /**
-     * Porsiyonu günceller ve kaloriyi yeniden hesaplar.
+     * Porsiyonu günceller ve kaloriyi/makroları yeniden hesaplar.
      */
     fun updatePortion(newPortion: Float) {
         _lastScanResult.value = _lastScanResult.value?.let { current ->
+            val ratio = newPortion / current.portion
             val newCalories = (current.baseCalories * newPortion).roundToInt()
-            current.copy(portion = newPortion, calories = newCalories)
+            current.copy(
+                portion = newPortion, 
+                calories = newCalories,
+                protein = current.protein * ratio,
+                carbs = current.carbs * ratio,
+                fat = current.fat * ratio
+            )
         }
     }
 
@@ -105,10 +126,40 @@ class ScannerViewModel(
     /**
      * Öğünü onaylar ve kaydeder.
      */
-    fun confirmMeal() {
-        // TODO: Repository üzerinden öğünü kaydet (POST /api/nutrition/save)
-        _isShowingReview.value = false
-        // Başarı mesajı veya yönlendirme tetiklenebilir
+    fun confirmMeal(token: String) {
+        val currentScan = _lastScanResult.value
+        if (currentScan == null || token.isEmpty()) return
+
+        viewModelScope.launch {
+            _isSaving.value = true
+            _error.value = null
+            
+            val request = SaveNutritionRequest(
+                foodName = currentScan.foodName,
+                calories = currentScan.calories,
+                protein = currentScan.protein,
+                carbs = currentScan.carbs,
+                fat = currentScan.fat,
+                portion = currentScan.portion
+            )
+            
+            val result = repository.saveMeal(token, request)
+            
+            result.onSuccess {
+                _isSaving.value = false
+                _isShowingReview.value = false
+                _saveSuccess.value = true
+                // Opsiyonel: Scan sonucunu temizle
+                // _selectedImageUri.value = null
+            }.onFailure { exception ->
+                _error.value = exception.message ?: "Kayıt sırasında bir hata oluştu"
+                _isSaving.value = false
+            }
+        }
+    }
+
+    fun resetSaveSuccess() {
+        _saveSuccess.value = false
     }
 
     fun createPhotoUri(context: Context): Uri {
@@ -145,6 +196,7 @@ class ScannerViewModel(
         _isAnalyzing.value = false
         _error.value = null
         _isShowingReview.value = false
+        _saveSuccess.value = false
     }
 
     fun resetAnalysis() {
@@ -157,6 +209,9 @@ class ScannerViewModel(
 data class LastScanResult(
     val foodName: String,
     val calories: Int,
-    val baseCalories: Int, // 1.0 porsiyonluk kalori
+    val baseCalories: Int,
+    val protein: Float,
+    val carbs: Float,
+    val fat: Float,
     val portion: Float
 )

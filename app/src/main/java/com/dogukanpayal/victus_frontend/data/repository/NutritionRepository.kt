@@ -2,8 +2,9 @@ package com.dogukanpayal.victus_frontend.data.repository
 
 import android.content.Context
 import android.net.Uri
-import com.dogukanpayal.victus_frontend.data.model.*
-import com.dogukanpayal.victus_frontend.data.remote.*
+import com.dogukanpayal.victus_frontend.data.model.NutritionAnalysisResponse
+import com.dogukanpayal.victus_frontend.data.model.SaveNutritionRequest
+import com.dogukanpayal.victus_frontend.data.remote.VictusApiService
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -11,61 +12,57 @@ import java.io.File
 import java.io.FileOutputStream
 
 interface NutritionRepository {
-    suspend fun analyzeImage(
-        accessToken: String,
-        imageUri: Uri,
-        context: Context
-    ): Result<NutritionAnalysisResponse>
+    suspend fun analyzeImage(token: String, imageUri: Uri, context: Context): Result<NutritionAnalysisResponse>
+    suspend fun saveMeal(token: String, request: SaveNutritionRequest): Result<Unit>
 }
 
 class NutritionRepositoryImpl(
-    private val apiService: VictusApiService = RetrofitClient.apiService
+    private val apiService: VictusApiService = com.dogukanpayal.victus_frontend.data.remote.RetrofitClient.apiService
 ) : NutritionRepository {
 
-    override suspend fun analyzeImage(
-        accessToken: String,
-        imageUri: Uri,
-        context: Context
-    ): Result<NutritionAnalysisResponse> {
+    override suspend fun analyzeImage(token: String, imageUri: Uri, context: Context): Result<NutritionAnalysisResponse> {
         return try {
-            val file = uriToFile(context, imageUri) ?: return Result.failure(Exception("Dosya oluşturulamadı"))
+            val file = uriToFile(context, imageUri)
             val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
             val body = MultipartBody.Part.createFormData("image", file.name, requestFile)
 
-            val authHeader = "Bearer $accessToken"
-            val response = apiService.analyzeNutrition(authHeader, body)
+            val response = apiService.analyzeNutrition("Bearer $token", body)
+            
+            // İşlem bitince geçici dosyayı silebiliriz
+            if (file.exists()) file.delete()
 
             if (response.isSuccessful && response.body() != null) {
-                // Analiz sonrası geçici dosyayı temizle
-                file.delete()
                 Result.success(response.body()!!)
             } else {
-                val errorMsg = response.errorBody()?.string() ?: "Analiz başarısız oldu"
-                Result.failure(Exception(errorMsg))
+                Result.failure(Exception("Analizi yapılamadı: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    /**
-     * Uri'yi geçici bir File nesnesine dönüştürür.
-     * Retrofit Multipart isteği için dosya yolu gereklidir.
-     */
-    private fun uriToFile(context: Context, uri: Uri): File? {
-        val inputStream = context.contentResolver.openInputStream(uri) ?: return null
-        val tempFile = File(context.cacheDir, "upload_image_${System.currentTimeMillis()}.jpg")
-        
-        try {
-            FileOutputStream(tempFile).use { output ->
-                inputStream.use { input ->
-                    input.copyTo(output)
-                }
+    override suspend fun saveMeal(token: String, request: SaveNutritionRequest): Result<Unit> {
+        return try {
+            val response = apiService.saveNutrition("Bearer $token", request)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Öğün kaydedilemedi: ${response.message()}"))
             }
-            return tempFile
         } catch (e: Exception) {
-            e.printStackTrace()
-            return null
+            Result.failure(e)
         }
+    }
+
+    private fun uriToFile(context: Context, uri: Uri): File {
+        val inputStream = context.contentResolver.openInputStream(uri)
+        val tempFile = File(context.cacheDir, "temp_upload_${System.currentTimeMillis()}.jpg")
+        val outputStream = FileOutputStream(tempFile)
+        inputStream?.use { input ->
+            outputStream.use { output ->
+                input.copyTo(output)
+            }
+        }
+        return tempFile
     }
 }

@@ -41,6 +41,8 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
     val context = LocalContext.current
     val lastScan by viewModel.lastScanResult.collectAsState()
     val isAnalyzing by viewModel.isAnalyzing.collectAsState()
+    val isSaving by viewModel.isSaving.collectAsState()
+    val saveSuccess by viewModel.saveSuccess.collectAsState()
     val selectedImageUri by viewModel.selectedImageUri.collectAsState()
     val error by viewModel.error.collectAsState()
 
@@ -49,6 +51,17 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
     val surfaceWhite = Color.White
     val textDark = Color(0xFF0F172A)
     val textGray = Color(0xFF64748B)
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Kayıt başarılı olduğunda tetiklenen efekt
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
+            snackbarHostState.showSnackbar("Öğün başarıyla kaydedildi! 🥗")
+            viewModel.resetSaveSuccess()
+            viewModel.clearSelectedImage()
+        }
+    }
 
     // ═══════════════════════════════════════════
     // Gallery Launcher (PickVisualMedia - izin gerektirmez)
@@ -109,7 +122,7 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
 
     if (isShowingReview) {
         ModalBottomSheet(
-            onDismissRequest = { viewModel.dismissReview() },
+            onDismissRequest = { if (!isSaving) viewModel.dismissReview() },
             sheetState = sheetState,
             containerColor = surfaceWhite,
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
@@ -159,7 +172,8 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                             focusedBorderColor = primaryGreen,
                             focusedLabelColor = primaryGreen
                         ),
-                        singleLine = true
+                        singleLine = true,
+                        enabled = !isSaving
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
@@ -195,6 +209,7 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                         onValueChange = { viewModel.updatePortion(it) },
                         valueRange = 0.5f..5.0f,
                         steps = 8, // 0.5, 1.0, 1.5 ... 5.0
+                        enabled = !isSaving,
                         colors = SliderDefaults.colors(
                             thumbColor = primaryGreen,
                             activeTrackColor = primaryGreen,
@@ -247,19 +262,29 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                                 .weight(1f)
                                 .height(56.dp),
                             shape = RoundedCornerShape(16.dp),
+                            enabled = !isSaving,
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
                         ) {
                             Text("Vazgeç", color = textGray)
                         }
                         Button(
-                            onClick = { viewModel.confirmMeal() },
+                            onClick = { viewModel.confirmMeal(token) },
                             modifier = Modifier
                                 .weight(1f)
                                 .height(56.dp),
                             shape = RoundedCornerShape(16.dp),
+                            enabled = !isSaving,
                             colors = ButtonDefaults.buttonColors(containerColor = primaryGreen)
                         ) {
-                            Text("Öğünü Ekle", fontWeight = FontWeight.Bold)
+                            if (isSaving) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                Text("Öğünü Ekle", fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -267,362 +292,368 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF8FAFC))
-            .padding(top = 24.dp, start = 24.dp, end = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Header
-        Text(
-            text = "Yemeğini Tara",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = textDark,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "AI teknolojisi ile saniyeler içinde kalori değerlerini öğrenin",
-            fontSize = 14.sp,
-            color = textGray,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 32.dp)
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // ═══════════════════════════════════════════
-        // Scanning Frame / Selected Image
-        // ═══════════════════════════════════════════
-        Box(
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color.Transparent
+    ) { paddingValues ->
+        Column(
             modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(32.dp))
-                .background(Color.Gray.copy(alpha = 0.1f))
-                .border(
-                    2.dp,
-                    if (selectedImageUri != null) primaryGreen else primaryGreen.copy(alpha = 0.3f),
-                    RoundedCornerShape(32.dp)
-                ),
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .background(Color(0xFFF8FAFC))
+                .padding(paddingValues)
+                .padding(top = 24.dp, start = 24.dp, end = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (selectedImageUri != null) {
-                // Seçilen fotoğrafı göster
-                AsyncImage(
-                    model = selectedImageUri,
-                    contentDescription = "Seçilen Yemek Fotoğrafı",
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(32.dp)),
-                    contentScale = ContentScale.Crop
-                )
+            // Header
+            Text(
+                text = "Yemeğini Tara",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = textDark,
+                textAlign = TextAlign.Center
+            )
 
-                // Temizle butonu (sağ üst köşe)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.TopEnd
-                ) {
-                    Surface(
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "AI teknolojisi ile saniyeler içinde kalori değerlerini öğrenin",
+                fontSize = 14.sp,
+                color = textGray,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 32.dp)
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // ═══════════════════════════════════════════
+            // Scanning Frame / Selected Image
+            // ═══════════════════════════════════════════
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(32.dp))
+                    .background(Color.Gray.copy(alpha = 0.1f))
+                    .border(
+                        2.dp,
+                        if (selectedImageUri != null) primaryGreen else primaryGreen.copy(alpha = 0.3f),
+                        RoundedCornerShape(32.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                if (selectedImageUri != null) {
+                    // Seçilen fotoğrafı göster
+                    AsyncImage(
+                        model = selectedImageUri,
+                        contentDescription = "Seçilen Yemek Fotoğrafı",
                         modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .clickable { viewModel.clearSelectedImage() },
-                        color = Color.Black.copy(alpha = 0.5f),
-                        shape = CircleShape
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(32.dp)),
+                        contentScale = ContentScale.Crop
+                    )
+
+                    // Temizle butonu (sağ üst köşe)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.TopEnd
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Fotoğrafı Kaldır",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
+                        Surface(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .clickable { viewModel.clearSelectedImage() },
+                            color = Color.Black.copy(alpha = 0.5f),
+                            shape = CircleShape
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Fotoğrafı Kaldır",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
                         }
+                    }
+
+                    // Fotoğraf seçildi bilgi bandı (alt kısım)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.BottomCenter
+                    ) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp)),
+                            color = Color.Black.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "📸",
+                                    fontSize = 16.sp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Fotoğraf hazır — analiz için gönderilecek",
+                                    fontSize = 13.sp,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // Placeholder (fotoğraf seçilmemiş)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(Color(0xFF134E4A), Color(0xFF0F766E))
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "🥗",
+                            fontSize = 120.sp
+                        )
+                    }
+
+                    // Scanning Frame Corners
+                    ScanningOverlay(primaryGreen)
+
+                    // Scanning Line Animation
+                    val infiniteTransition = rememberInfiniteTransition(label = "scanning")
+                    val yOffset by infiniteTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(2000, easing = LinearEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "yOffset"
+                    )
+
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(2.dp)
+                                .offset(y = maxHeight * yOffset)
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(Color.Transparent, primaryGreen, Color.Transparent)
+                                    )
+                                )
+                        )
                     }
                 }
 
-                // Fotoğraf seçildi bilgi bandı (alt kısım)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.BottomCenter
-                ) {
-                    Surface(
+                // Analiz ediliyor loading overlay
+                if (isAnalyzing) {
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp)),
-                        color = Color.Black.copy(alpha = 0.6f),
-                        shape = RoundedCornerShape(16.dp)
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.4f)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Center
-                        ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = Color.White)
+                            Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "📸",
-                                fontSize = 16.sp
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Fotoğraf hazır — analiz için gönderilecek",
-                                fontSize = 13.sp,
+                                text = "Yapay Zeka Analiz Ediyor...",
                                 color = Color.White,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Medium
                             )
                         }
                     }
                 }
-            } else {
-                // Placeholder (fotoğraf seçilmemiş)
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.linearGradient(
-                                listOf(Color(0xFF134E4A), Color(0xFF0F766E))
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "🥗",
-                        fontSize = 120.sp
-                    )
-                }
-
-                // Scanning Frame Corners
-                ScanningOverlay(primaryGreen)
-
-                // Scanning Line Animation
-                val infiniteTransition = rememberInfiniteTransition(label = "scanning")
-                val yOffset by infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(2000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "yOffset"
-                )
-
-                BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(2.dp)
-                            .offset(y = maxHeight * yOffset)
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(Color.Transparent, primaryGreen, Color.Transparent)
-                                )
-                            )
-                    )
-                }
             }
 
-            // Analiz ediliyor loading overlay
-            if (isAnalyzing) {
-                Box(
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Hata Mesajı
+            error?.let {
+                Card(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.4f)),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(color = Color.White)
-                        Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("⚠️", fontSize = 16.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Yapay Zeka Analiz Ediyor...",
-                            color = Color.White,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
+                            text = it,
+                            color = Color(0xFF991B1B),
+                            fontSize = 13.sp,
+                            modifier = Modifier.weight(1f)
                         )
+                        IconButton(onClick = { viewModel.clearSelectedImage() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Kapat", tint = Color(0xFF991B1B), modifier = Modifier.size(16.dp))
+                        }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
 
-        // Hata Mesajı
-        error?.let {
+            // ═══════════════════════════════════════════
+            // Action Buttons
+            // ═══════════════════════════════════════════
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ControlButton(
+                    icon = Icons.Default.Home,
+                    label = "Galeri",
+                    primaryGreen = primaryGreen,
+                    onClick = { launchGallery() }
+                )
+
+                // Main Shutter Button
+                Surface(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .clickable { launchCamera() },
+                    color = primaryGreen,
+                    shadowElevation = 8.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .border(4.dp, Color.White.copy(alpha = 0.5f), CircleShape)
+                        )
+                        Icon(
+                            imageVector = if (selectedImageUri != null) Icons.Default.Refresh else Icons.Default.PlayArrow,
+                            contentDescription = "Capture",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+
+                ControlButton(
+                    icon = Icons.Default.Settings,
+                    label = "Flaş",
+                    primaryGreen = primaryGreen,
+                    onClick = { /* Flash toggle */ }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Last Scan Result Card
+            lastScan?.let { scan ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = surfaceWhite),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFDCFCE7)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("✅", fontSize = 20.sp)
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Son Tarama",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = primaryGreen,
+                                letterSpacing = 1.sp
+                            )
+                            Text(
+                                text = scan.foodName,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = textDark
+                            )
+                            Text(
+                                text = "${scan.portion} porsiyon",
+                                fontSize = 12.sp,
+                                color = textGray
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = "${scan.calories}",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = textDark
+                            )
+                            Text(
+                                text = "kcal",
+                                fontSize = 11.sp,
+                                color = textGray
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Tip Card
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("⚠️", fontSize = 16.sp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = it,
-                        color = Color(0xFF991B1B),
-                        fontSize = 13.sp,
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconButton(onClick = { viewModel.clearSelectedImage() }) {
-                        Icon(Icons.Default.Close, contentDescription = "Kapat", tint = Color(0xFF991B1B), modifier = Modifier.size(16.dp))
-                    }
-                }
-            }
-        }
-
-
-        // ═══════════════════════════════════════════
-        // Action Buttons
-        // ═══════════════════════════════════════════
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ControlButton(
-                icon = Icons.Default.Home,
-                label = "Galeri",
-                primaryGreen = primaryGreen,
-                onClick = { launchGallery() }
-            )
-
-            // Main Shutter Button
-            Surface(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .clickable { launchCamera() },
-                color = primaryGreen,
-                shadowElevation = 8.dp
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .border(4.dp, Color.White.copy(alpha = 0.5f), CircleShape)
-                    )
-                    Icon(
-                        imageVector = if (selectedImageUri != null) Icons.Default.Refresh else Icons.Default.PlayArrow,
-                        contentDescription = "Capture",
-                        tint = Color.White,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-            }
-
-            ControlButton(
-                icon = Icons.Default.Settings,
-                label = "Flaş",
-                primaryGreen = primaryGreen,
-                onClick = { /* Flash toggle */ }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Last Scan Result Card
-        lastScan?.let { scan ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = surfaceWhite),
+                    .padding(bottom = 100.dp),
+                colors = CardDefaults.cardColors(containerColor = lightGreenBg),
                 shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(2.dp)
+                elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Row(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
+                    modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(44.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color(0xFFDCFCE7)),
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(primaryGreen),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("✅", fontSize = 20.sp)
+                        Text("i", color = Color.White, fontWeight = FontWeight.Bold)
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Son Tarama",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = primaryGreen,
-                            letterSpacing = 1.sp
-                        )
-                        Text(
-                            text = scan.foodName,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = textDark
-                        )
-                        Text(
-                            text = "${scan.portion} porsiyon",
-                            fontSize = 12.sp,
-                            color = textGray
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "${scan.calories}",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = textDark
-                        )
-                        Text(
-                            text = "kcal",
-                            fontSize = 11.sp,
-                            color = textGray
-                        )
-                    }
+                    Text(
+                        text = "İpucu: En iyi sonuç için yemeği iyi aydınlatılmış bir ortamda ve net bir şekilde kadraja alın.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF166534),
+                        lineHeight = 18.sp
+                    )
                 }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Tip Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 100.dp),
-            colors = CardDefaults.cardColors(containerColor = lightGreenBg),
-            shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.cardElevation(0.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(primaryGreen),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("i", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "İpucu: En iyi sonuç için yemeği iyi aydınlatılmış bir ortamda ve net bir şekilde kadraja alın.",
-                    fontSize = 12.sp,
-                    color = Color(0xFF166534),
-                    lineHeight = 18.sp
-                )
             }
         }
     }

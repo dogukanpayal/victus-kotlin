@@ -29,4 +29,10 @@ interface VictusApiService {
 
     @POST("v1/auth/login")
     suspend fun login(@Body request: LoginRequest): Response<RegisterResponse>
+
+    @POST("v1/nutrition/save")
+    suspend fun saveNutrition(
+        @Header("Authorization") token: String,
+        @Body request: SaveNutritionRequest
+    ): Response<Unit> // Başarı durumunda 201 Created veya 200 OK döner
 }
