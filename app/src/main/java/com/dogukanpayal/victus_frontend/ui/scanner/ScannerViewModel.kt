@@ -4,12 +4,18 @@ import android.content.Context
 import android.net.Uri
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.dogukanpayal.victus_frontend.data.repository.NutritionRepository
+import com.dogukanpayal.victus_frontend.data.repository.NutritionRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.io.File
 
-class ScannerViewModel : ViewModel() {
+class ScannerViewModel(
+    private val repository: NutritionRepository = NutritionRepositoryImpl()
+) : ViewModel() {
 
     private val _selectedImageUri = MutableStateFlow<Uri?>(null)
     val selectedImageUri: StateFlow<Uri?> = _selectedImageUri.asStateFlow()
@@ -20,7 +26,10 @@ class ScannerViewModel : ViewModel() {
     private val _lastScanResult = MutableStateFlow<LastScanResult?>(null)
     val lastScanResult: StateFlow<LastScanResult?> = _lastScanResult.asStateFlow()
 
-    // Kamera için geçici URI (FileProvider tarafından oluşturulur)
+    private val _error = MutableStateFlow<String?>(null)
+    val error: StateFlow<String?> = _error.asStateFlow()
+
+    // Kamera için geçici URI
     private val _pendingCameraUri = MutableStateFlow<Uri?>(null)
     val pendingCameraUri: StateFlow<Uri?> = _pendingCameraUri.asStateFlow()
 
@@ -34,9 +43,34 @@ class ScannerViewModel : ViewModel() {
     }
 
     /**
-     * Kamera ile fotoğraf çekmeden önce geçici bir URI oluşturur.
-     * FileProvider kullanarak cache dizininde güvenli bir dosya oluşturur.
+     * Fotoğrafı analiz için backend'e gönderir.
      */
+    fun analyzeImage(context: Context, uri: Uri, token: String) {
+        if (token.isEmpty()) {
+            _error.value = "Oturum açılmamış. Lütfen tekrar giriş yapın."
+            return
+        }
+
+        viewModelScope.launch {
+            _isAnalyzing.value = true
+            _error.value = null
+            
+            val result = repository.analyzeImage(token, uri, context)
+            
+            result.onSuccess { response ->
+                _lastScanResult.value = LastScanResult(
+                    foodName = response.foodName,
+                    calories = response.calories,
+                    portion = response.portionSize
+                )
+                _isAnalyzing.value = false
+            }.onFailure { exception ->
+                _error.value = exception.message ?: "Analiz sırasında bir hata oluştu"
+                _isAnalyzing.value = false
+            }
+        }
+    }
+
     fun createPhotoUri(context: Context): Uri {
         val photoDir = File(context.cacheDir, "camera_photos")
         photoDir.mkdirs()
@@ -50,40 +84,32 @@ class ScannerViewModel : ViewModel() {
         return uri
     }
 
-    /**
-     * Kamera fotoğraf çektikten sonra çağrılır.
-     * success = true ise fotoğraf başarıyla çekildi, URI set edilir.
-     */
-    fun onPhotoTaken(success: Boolean) {
+    fun onPhotoTaken(success: Boolean, context: Context, token: String) {
         if (success) {
-            _selectedImageUri.value = _pendingCameraUri.value
-            // TODO: İleride analyzeImage() çağrılacak — POST /api/nutrition/analyze
+            val uri = _pendingCameraUri.value
+            if (uri != null) {
+                _selectedImageUri.value = uri
+                analyzeImage(context, uri, token)
+            }
         }
         _pendingCameraUri.value = null
     }
 
-    /**
-     * Galeriden fotoğraf seçildiğinde çağrılır.
-     */
-    fun onImageSelected(uri: Uri) {
+    fun onImageSelected(uri: Uri, context: Context, token: String) {
         _selectedImageUri.value = uri
-        // TODO: İleride analyzeImage() çağrılacak — POST /api/nutrition/analyze
+        analyzeImage(context, uri, token)
     }
 
-    /**
-     * Seçilen fotoğrafı temizler (tekrar çekim için)
-     */
     fun clearSelectedImage() {
         _selectedImageUri.value = null
         _isAnalyzing.value = false
+        _error.value = null
     }
 
-    /**
-     * Analizi resetle
-     */
     fun resetAnalysis() {
         _selectedImageUri.value = null
         _isAnalyzing.value = false
+        _error.value = null
     }
 }
 

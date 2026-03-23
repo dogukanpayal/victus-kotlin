@@ -1,10 +1,18 @@
 package com.dogukanpayal.victus_frontend.data.remote
 
 import com.dogukanpayal.victus_frontend.data.model.*
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
 
 interface VictusApiService {
+    @Multipart
+    @POST("v1/nutrition/analyze")
+    suspend fun analyzeNutrition(
+        @Header("Authorization") token: String,
+        @Part image: MultipartBody.Part
+    ): Response<NutritionAnalysisResponse>
+
     @POST("v1/auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<RegisterResponse>
 

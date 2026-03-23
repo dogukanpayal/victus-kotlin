@@ -36,11 +36,12 @@ import androidx.core.content.ContextCompat
 import coil3.compose.AsyncImage
 
 @Composable
-fun ScannerScreen(viewModel: ScannerViewModel) {
+fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
     val context = LocalContext.current
     val lastScan by viewModel.lastScanResult.collectAsState()
     val isAnalyzing by viewModel.isAnalyzing.collectAsState()
     val selectedImageUri by viewModel.selectedImageUri.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     val primaryGreen = Color(0xFF22C55E)
     val lightGreenBg = Color(0xFFF0FDF4)
@@ -54,7 +55,7 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
-        uri?.let { viewModel.onImageSelected(it) }
+        uri?.let { viewModel.onImageSelected(it, context, token) }
     }
 
     // ═══════════════════════════════════════════
@@ -63,8 +64,9 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
-        viewModel.onPhotoTaken(success)
+        viewModel.onPhotoTaken(success, context, token)
     }
+
 
     // ═══════════════════════════════════════════
     // Camera Permission Launcher
@@ -260,9 +262,59 @@ fun ScannerScreen(viewModel: ScannerViewModel) {
                     )
                 }
             }
+
+            // Analiz ediliyor loading overlay
+            if (isAnalyzing) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.4f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        CircularProgressIndicator(color = Color.White)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Yapay Zeka Analiz Ediyor...",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        // Hata Mesajı
+        error?.let {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("⚠️", fontSize = 16.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = it,
+                        color = Color(0xFF991B1B),
+                        fontSize = 13.sp,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = { viewModel.clearSelectedImage() }) {
+                        Icon(Icons.Default.Close, contentDescription = "Kapat", tint = Color(0xFF991B1B), modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
+        }
+
 
         // ═══════════════════════════════════════════
         // Action Buttons

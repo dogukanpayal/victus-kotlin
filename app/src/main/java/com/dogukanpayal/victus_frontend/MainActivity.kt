@@ -236,7 +236,7 @@ class MainActivity : ComponentActivity() {
                                             Screen.Workout -> WorkoutScreen(viewModel = workoutViewModel)
                                             Screen.Exercise -> ExerciseScreen(viewModel = exerciseViewModel)
                                             Screen.Diet -> DietScreen(viewModel = dietViewModel)
-                                            Screen.Scanner -> ScannerScreen(viewModel = scannerViewModel)
+                                            Screen.Scanner -> ScannerScreen(viewModel = scannerViewModel, token = setupToken.value)
                                             else -> {}
                                         }
                                     }
