@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.math.roundToInt
 
 class ScannerViewModel(
     private val repository: NutritionRepository = NutritionRepositoryImpl()
@@ -26,6 +27,9 @@ class ScannerViewModel(
     private val _lastScanResult = MutableStateFlow<LastScanResult?>(null)
     val lastScanResult: StateFlow<LastScanResult?> = _lastScanResult.asStateFlow()
 
+    private val _isShowingReview = MutableStateFlow(false)
+    val isShowingReview: StateFlow<Boolean> = _isShowingReview.asStateFlow()
+
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
@@ -38,6 +42,7 @@ class ScannerViewModel(
         _lastScanResult.value = LastScanResult(
             foodName = "Mercimek Çorbası",
             calories = 240,
+            baseCalories = 160, // 240 / 1.5
             portion = 1.5f
         )
     }
@@ -61,14 +66,49 @@ class ScannerViewModel(
                 _lastScanResult.value = LastScanResult(
                     foodName = response.foodName,
                     calories = response.calories,
+                    baseCalories = (response.calories / response.portionSize).toInt(),
                     portion = response.portionSize
                 )
                 _isAnalyzing.value = false
+                _isShowingReview.value = true // Analiz bitince onay ekranını aç
             }.onFailure { exception ->
                 _error.value = exception.message ?: "Analiz sırasında bir hata oluştu"
                 _isAnalyzing.value = false
             }
         }
+    }
+
+    /**
+     * Porsiyonu günceller ve kaloriyi yeniden hesaplar.
+     */
+    fun updatePortion(newPortion: Float) {
+        _lastScanResult.value = _lastScanResult.value?.let { current ->
+            val newCalories = (current.baseCalories * newPortion).roundToInt()
+            current.copy(portion = newPortion, calories = newCalories)
+        }
+    }
+
+    /**
+     * Yemek adını manuel günceller.
+     */
+    fun updateFoodName(newName: String) {
+        _lastScanResult.value = _lastScanResult.value?.copy(foodName = newName)
+    }
+
+    /**
+     * Onay ekranını kapatır.
+     */
+    fun dismissReview() {
+        _isShowingReview.value = false
+    }
+
+    /**
+     * Öğünü onaylar ve kaydeder.
+     */
+    fun confirmMeal() {
+        // TODO: Repository üzerinden öğünü kaydet (POST /api/nutrition/save)
+        _isShowingReview.value = false
+        // Başarı mesajı veya yönlendirme tetiklenebilir
     }
 
     fun createPhotoUri(context: Context): Uri {
@@ -104,6 +144,7 @@ class ScannerViewModel(
         _selectedImageUri.value = null
         _isAnalyzing.value = false
         _error.value = null
+        _isShowingReview.value = false
     }
 
     fun resetAnalysis() {
@@ -116,5 +157,6 @@ class ScannerViewModel(
 data class LastScanResult(
     val foodName: String,
     val calories: Int,
+    val baseCalories: Int, // 1.0 porsiyonluk kalori
     val portion: Float
 )

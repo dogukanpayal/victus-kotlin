@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import coil3.compose.AsyncImage
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
     val context = LocalContext.current
@@ -67,7 +68,6 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
         viewModel.onPhotoTaken(success, context, token)
     }
 
-
     // ═══════════════════════════════════════════
     // Camera Permission Launcher
     // ═══════════════════════════════════════════
@@ -99,6 +99,172 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
         galleryLauncher.launch(
             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
         )
+    }
+
+    // ═══════════════════════════════════════════
+    // Review Bottom Sheet
+    // ═══════════════════════════════════════════
+    val isShowingReview by viewModel.isShowingReview.collectAsState()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    if (isShowingReview) {
+        ModalBottomSheet(
+            onDismissRequest = { viewModel.dismissReview() },
+            sheetState = sheetState,
+            containerColor = surfaceWhite,
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+            dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFFE2E8F0)) }
+        ) {
+            lastScan?.let { scan ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 24.dp, end = 24.dp, bottom = 40.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Analiz Sonucu",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textDark
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Image Preview in Sheet
+                    Box(
+                        modifier = Modifier
+                            .size(120.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color(0xFFF1F5F9))
+                    ) {
+                        AsyncImage(
+                            model = selectedImageUri ?: "🥗", // URI yoksa emoji (fallback)
+                            contentDescription = "Yemek",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Food Name Input
+                    OutlinedTextField(
+                        value = scan.foodName,
+                        onValueChange = { viewModel.updateFoodName(it) },
+                        label = { Text("Yemek Adı") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryGreen,
+                            focusedLabelColor = primaryGreen
+                        ),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Portion Selector (Slider)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Porsiyon",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = textDark
+                        )
+                        Surface(
+                            color = lightGreenBg,
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "x ${String.format("%.1f", scan.portion)}",
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                color = primaryGreen,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                    
+                    Slider(
+                        value = scan.portion,
+                        onValueChange = { viewModel.updatePortion(it) },
+                        valueRange = 0.5f..5.0f,
+                        steps = 8, // 0.5, 1.0, 1.5 ... 5.0
+                        colors = SliderDefaults.colors(
+                            thumbColor = primaryGreen,
+                            activeTrackColor = primaryGreen,
+                            inactiveTrackColor = Color(0xFFE2E8F0)
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Summary Calories
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Color(0xFFF8FAFC),
+                        shape = RoundedCornerShape(20.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(20.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text("Toplam Kalori", fontSize = 13.sp, color = textGray)
+                                Text(
+                                    text = "${scan.calories} kcal",
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = textDark
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow, // Onay ikonu olarak geçici
+                                contentDescription = null,
+                                tint = primaryGreen,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // Action Buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { viewModel.dismissReview() },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
+                        ) {
+                            Text("Vazgeç", color = textGray)
+                        }
+                        Button(
+                            onClick = { viewModel.confirmMeal() },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryGreen)
+                        ) {
+                            Text("Öğünü Ekle", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     Column(
