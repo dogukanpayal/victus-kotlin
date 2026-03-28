@@ -2,6 +2,7 @@ package com.dogukanpayal.victus_frontend.data.repository
 
 import android.content.Context
 import android.net.Uri
+import com.dogukanpayal.victus_frontend.data.model.NutritionSummaryResponse
 import com.dogukanpayal.victus_frontend.data.model.NutritionAnalysisResponse
 import com.dogukanpayal.victus_frontend.data.model.SaveNutritionRequest
 import com.dogukanpayal.victus_frontend.data.remote.VictusApiService
@@ -14,6 +15,7 @@ import java.io.FileOutputStream
 interface NutritionRepository {
     suspend fun analyzeImage(token: String, imageUri: Uri, context: Context): Result<NutritionAnalysisResponse>
     suspend fun saveMeal(token: String, request: SaveNutritionRequest): Result<Unit>
+    suspend fun getSummary(token: String): Result<NutritionSummaryResponse>
 }
 
 class NutritionRepositoryImpl(
@@ -23,7 +25,7 @@ class NutritionRepositoryImpl(
     override suspend fun analyzeImage(token: String, imageUri: Uri, context: Context): Result<NutritionAnalysisResponse> {
         return try {
             val file = uriToFile(context, imageUri)
-            val requestFile = file.asRequestBody("image/*".toMediaTypeOrNull())
+            val requestFile = file.asRequestBody("image/webp".toMediaTypeOrNull())
             val body = MultipartBody.Part.createFormData("image", file.name, requestFile)
 
             val response = apiService.analyzeNutrition("Bearer $token", body)
@@ -33,6 +35,8 @@ class NutritionRepositoryImpl(
 
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
+            } else if (response.code() == 401) {
+                Result.failure(Exception("HTTP 401 Unauthorized"))
             } else {
                 Result.failure(Exception("Analizi yapılamadı: ${response.message()}"))
             }
@@ -46,6 +50,8 @@ class NutritionRepositoryImpl(
             val response = apiService.saveNutrition("Bearer $token", request)
             if (response.isSuccessful) {
                 Result.success(Unit)
+            } else if (response.code() == 401) {
+                Result.failure(Exception("HTTP 401 Unauthorized"))
             } else {
                 Result.failure(Exception("Öğün kaydedilemedi: ${response.message()}"))
             }
@@ -54,15 +60,39 @@ class NutritionRepositoryImpl(
         }
     }
 
-    private fun uriToFile(context: Context, uri: Uri): File {
-        val inputStream = context.contentResolver.openInputStream(uri)
-        val tempFile = File(context.cacheDir, "temp_upload_${System.currentTimeMillis()}.jpg")
-        val outputStream = FileOutputStream(tempFile)
-        inputStream?.use { input ->
-            outputStream.use { output ->
-                input.copyTo(output)
+    override suspend fun getSummary(token: String): Result<NutritionSummaryResponse> {
+        return try {
+            val response = apiService.getSummary("Bearer $token")
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else if (response.code() == 401) {
+                Result.failure(Exception("HTTP 401 Unauthorized"))
+            } else {
+                Result.failure(Exception("Özet alınamadı: ${response.message()}"))
             }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
+    }
+
+    private fun uriToFile(context: Context, uri: Uri): File {
+        val tempFile = File(context.cacheDir, "temp_upload_${System.currentTimeMillis()}.webp")
+        context.contentResolver.openInputStream(uri)?.use { inputStream ->
+            val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+            if (bitmap != null) {
+                FileOutputStream(tempFile).use { outputStream ->
+                    val format = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                        android.graphics.Bitmap.CompressFormat.WEBP_LOSSY
+                    } else {
+                        @Suppress("DEPRECATION")
+                        android.graphics.Bitmap.CompressFormat.WEBP
+                    }
+                    bitmap.compress(format, 80, outputStream)
+                }
+            } else {
+                throw Exception("Görsel parçalanamadı veya bozuk.")
+            }
+        } ?: throw Exception("Görsel dosyası okunamadı.")
         return tempFile
     }
 }

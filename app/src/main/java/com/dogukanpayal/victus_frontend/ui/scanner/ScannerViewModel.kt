@@ -31,6 +31,9 @@ class ScannerViewModel(
     private val _lastScanResult = MutableStateFlow<LastScanResult?>(null)
     val lastScanResult: StateFlow<LastScanResult?> = _lastScanResult.asStateFlow()
 
+    private val _scanHistory = MutableStateFlow<List<LastScanResult>>(emptyList())
+    val scanHistory: StateFlow<List<LastScanResult>> = _scanHistory.asStateFlow()
+
     private val _isShowingReview = MutableStateFlow(false)
     val isShowingReview: StateFlow<Boolean> = _isShowingReview.asStateFlow()
 
@@ -45,16 +48,7 @@ class ScannerViewModel(
     val pendingCameraUri: StateFlow<Uri?> = _pendingCameraUri.asStateFlow()
 
     init {
-        // Mock son tarama sonucu
-        _lastScanResult.value = LastScanResult(
-            foodName = "Mercimek Çorbası",
-            calories = 240,
-            baseCalories = 160,
-            protein = 12f,
-            carbs = 30f,
-            fat = 5f,
-            portion = 1.5f
-        )
+        // Mock data removed to keep initial state empty
     }
 
     /**
@@ -86,7 +80,11 @@ class ScannerViewModel(
                 _isAnalyzing.value = false
                 _isShowingReview.value = true // Analiz bitince onay ekranını aç
             }.onFailure { exception ->
-                _error.value = exception.message ?: "Analiz sırasında bir hata oluştu"
+                if (exception.message?.contains("401") == true) {
+                    _error.value = "Oturum süresi doldu. Lütfen yeniden giriş yapın."
+                } else {
+                    _error.value = exception.message ?: "Analiz sırasında bir hata oluştu"
+                }
                 _isAnalyzing.value = false
             }
         }
@@ -149,10 +147,21 @@ class ScannerViewModel(
                 _isSaving.value = false
                 _isShowingReview.value = false
                 _saveSuccess.value = true
+                
+                // Başarılı kaydı yerel geçmişe ekle
+                currentScan.let { scan ->
+                    _scanHistory.value = _scanHistory.value + scan
+                }
+                
                 // Opsiyonel: Scan sonucunu temizle
-                // _selectedImageUri.value = null
+                _lastScanResult.value = null
+                _selectedImageUri.value = null
             }.onFailure { exception ->
-                _error.value = exception.message ?: "Kayıt sırasında bir hata oluştu"
+                if (exception.message?.contains("401") == true) {
+                    _error.value = "Oturum süresi doldu. Lütfen yeniden giriş yapın."
+                } else {
+                    _error.value = exception.message ?: "Kayıt sırasında bir hata oluştu"
+                }
                 _isSaving.value = false
             }
         }
@@ -203,6 +212,13 @@ class ScannerViewModel(
         _selectedImageUri.value = null
         _isAnalyzing.value = false
         _error.value = null
+    }
+
+    /**
+     * Yerel tarama geçmişini temizler.
+     */
+    fun clearHistory() {
+        _scanHistory.value = emptyList()
     }
 }
 

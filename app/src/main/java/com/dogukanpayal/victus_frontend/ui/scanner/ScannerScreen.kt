@@ -10,8 +10,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Home
@@ -20,6 +22,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,6 +32,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +44,7 @@ import coil3.compose.AsyncImage
 fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
     val context = LocalContext.current
     val lastScan by viewModel.lastScanResult.collectAsState()
+    val scanHistory by viewModel.scanHistory.collectAsState()
     val isAnalyzing by viewModel.isAnalyzing.collectAsState()
     val isSaving by viewModel.isSaving.collectAsState()
     val saveSuccess by viewModel.saveSuccess.collectAsState()
@@ -178,43 +183,29 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Portion Selector (Slider)
-                    Row(
+                    var portionText by remember { mutableStateOf(scan.portion.toString()) }
+
+                    OutlinedTextField(
+                        value = portionText,
+                        onValueChange = { newValue ->
+                            if (newValue.isEmpty() || newValue.matches(Regex("^\\d*[.,]?\\d*$"))) {
+                                portionText = newValue
+                                val floatValue = newValue.replace(",", ".").toFloatOrNull()
+                                if (floatValue != null && floatValue > 0f) {
+                                    viewModel.updatePortion(floatValue)
+                                }
+                            }
+                        },
+                        label = { Text("Porsiyon (Örn: 1.5)") },
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Porsiyon",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = textDark
-                        )
-                        Surface(
-                            color = lightGreenBg,
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = "x ${String.format("%.1f", scan.portion)}",
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                color = primaryGreen,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                    
-                    Slider(
-                        value = scan.portion,
-                        onValueChange = { viewModel.updatePortion(it) },
-                        valueRange = 0.5f..5.0f,
-                        steps = 8, // 0.5, 1.0, 1.5 ... 5.0
-                        enabled = !isSaving,
-                        colors = SliderDefaults.colors(
-                            thumbColor = primaryGreen,
-                            activeTrackColor = primaryGreen,
-                            inactiveTrackColor = Color(0xFFE2E8F0)
-                        )
+                        shape = RoundedCornerShape(16.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = primaryGreen,
+                            focusedLabelColor = primaryGreen
+                        ),
+                        singleLine = true,
+                        enabled = !isSaving
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -296,10 +287,12 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color.Transparent
     ) { paddingValues ->
+        val scrollState = rememberScrollState()
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color(0xFFF8FAFC))
+                .verticalScroll(scrollState)
                 .padding(paddingValues)
                 .padding(top = 24.dp, start = 24.dp, end = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -330,8 +323,8 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
             // ═══════════════════════════════════════════
             Box(
                 modifier = Modifier
-                    .weight(1f)
                     .fillMaxWidth()
+                    .height(380.dp) // Fixed height to provide a large, clear preview
                     .clip(RoundedCornerShape(32.dp))
                     .background(Color.Gray.copy(alpha = 0.1f))
                     .border(
@@ -348,8 +341,9 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                         contentDescription = "Seçilen Yemek Fotoğrafı",
                         modifier = Modifier
                             .fillMaxSize()
-                            .clip(RoundedCornerShape(32.dp)),
-                        contentScale = ContentScale.Crop
+                            .clip(RoundedCornerShape(32.dp))
+                            .padding(8.dp), // Give it some padding for border effect
+                        contentScale = ContentScale.Fit // Show the WHOLE photo
                     )
 
                     // Temizle butonu (sağ üst köşe)
@@ -560,11 +554,40 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-
-            // Last Scan Result Card
-            lastScan?.let { scan ->
-                Card(
+            
+            // Scan History Header and Clear Button
+            if (scanHistory.isNotEmpty()) {
+                Row(
                     modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Oturum Geçmişi",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textDark
+                    )
+                    Text(
+                        text = "Temizle",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = primaryGreen,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { viewModel.clearHistory() }
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            // Scan History List
+            scanHistory.reversed().forEach { scan ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
                     colors = CardDefaults.cardColors(containerColor = surfaceWhite),
                     shape = RoundedCornerShape(20.dp),
                     elevation = CardDefaults.cardElevation(2.dp)
@@ -586,13 +609,6 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Son Tarama",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = primaryGreen,
-                                letterSpacing = 1.sp
-                            )
                             Text(
                                 text = scan.foodName,
                                 fontSize = 15.sp,

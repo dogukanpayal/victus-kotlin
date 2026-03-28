@@ -35,4 +35,9 @@ interface VictusApiService {
         @Header("Authorization") token: String,
         @Body request: SaveNutritionRequest
     ): Response<Unit> // Başarı durumunda 201 Created veya 200 OK döner
+
+    @GET("v1/nutrition/summary")
+    suspend fun getSummary(
+        @Header("Authorization") token: String
+    ): Response<NutritionSummaryResponse>
 }
