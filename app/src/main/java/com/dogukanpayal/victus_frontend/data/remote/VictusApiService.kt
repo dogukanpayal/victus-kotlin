@@ -13,6 +13,12 @@ interface VictusApiService {
         @Part image: MultipartBody.Part
     ): Response<NutritionAnalysisResponse>
 
+    @POST("v1/nutrition/analyze-text")
+    suspend fun analyzeText(
+        @Header("Authorization") token: String,
+        @Body request: AnalyzeTextRequest
+    ): Response<NutritionAnalysisResponse>
+
     @POST("v1/auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<RegisterResponse>
 

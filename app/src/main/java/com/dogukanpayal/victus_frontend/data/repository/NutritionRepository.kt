@@ -14,6 +14,7 @@ import java.io.FileOutputStream
 
 interface NutritionRepository {
     suspend fun analyzeImage(token: String, imageUri: Uri, context: Context): Result<NutritionAnalysisResponse>
+    suspend fun analyzeText(token: String, query: String, portion: Double): Result<NutritionAnalysisResponse>
     suspend fun saveMeal(token: String, request: SaveNutritionRequest): Result<Unit>
     suspend fun getSummary(token: String): Result<NutritionSummaryResponse>
 }
@@ -39,6 +40,23 @@ class NutritionRepositoryImpl(
                 Result.failure(Exception("HTTP 401 Unauthorized"))
             } else {
                 Result.failure(Exception("Analizi yapılamadı: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun analyzeText(token: String, query: String, portion: Double): Result<NutritionAnalysisResponse> {
+        return try {
+            val request = com.dogukanpayal.victus_frontend.data.model.AnalyzeTextRequest(query, portion)
+            val response = apiService.analyzeText("Bearer $token", request)
+            
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else if (response.code() == 401) {
+                Result.failure(Exception("HTTP 401 Unauthorized"))
+            } else {
+                Result.failure(Exception("Yemek analiz edilemedi: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

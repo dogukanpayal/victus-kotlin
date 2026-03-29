@@ -28,8 +28,8 @@ class ScannerViewModel(
     private val _isSaving = MutableStateFlow(false)
     val isSaving: StateFlow<Boolean> = _isSaving.asStateFlow()
 
-    private val _lastScanResult = MutableStateFlow<LastScanResult?>(null)
-    val lastScanResult: StateFlow<LastScanResult?> = _lastScanResult.asStateFlow()
+    private val _lastScanResults = MutableStateFlow<List<LastScanResult>>(emptyList())
+    val lastScanResults: StateFlow<List<LastScanResult>> = _lastScanResults.asStateFlow()
 
     private val _scanHistory = MutableStateFlow<List<LastScanResult>>(emptyList())
     val scanHistory: StateFlow<List<LastScanResult>> = _scanHistory.asStateFlow()
@@ -68,15 +68,18 @@ class ScannerViewModel(
             val result = repository.analyzeImage(token, uri, context)
             
             result.onSuccess { response ->
-                _lastScanResult.value = LastScanResult(
-                    foodName = response.foodName,
-                    calories = response.calories,
-                    baseCalories = (response.calories / response.portionSize).toInt(),
-                    protein = response.protein,
-                    carbs = response.carbs,
-                    fat = response.fat,
-                    portion = response.portionSize
-                )
+                val scanResults = response.results.map { item ->
+                    LastScanResult(
+                        foodName = item.foodName,
+                        calories = item.calories,
+                        baseCalories = (item.calories / (if (item.portionSize > 0) item.portionSize else 1f)).toInt(),
+                        protein = item.protein,
+                        carbs = item.carbs,
+                        fat = item.fat,
+                        portion = item.portionSize
+                    )
+                }
+                _lastScanResults.value = scanResults
                 _isAnalyzing.value = false
                 _isShowingReview.value = true // Analiz bitince onay ekranını aç
             }.onFailure { exception ->
@@ -91,27 +94,94 @@ class ScannerViewModel(
     }
 
     /**
-     * Porsiyonu günceller ve kaloriyi/makroları yeniden hesaplar.
+     * Manuel yemek girişi analiz eder (Metin tabanlı).
      */
-    fun updatePortion(newPortion: Float) {
-        _lastScanResult.value = _lastScanResult.value?.let { current ->
-            val ratio = newPortion / current.portion
+    fun analyzeTextPortion(query: String, portion: Double, token: String) {
+        if (token.isEmpty()) {
+            _error.value = "Oturum açılmamış. Lütfen tekrar giriş yapın."
+            return
+        }
+
+        if (query.isEmpty()) {
+            _error.value = "Yemek adı boş olamaz."
+            return
+        }
+
+        viewModelScope.launch {
+            _isAnalyzing.value = true
+            _error.value = null
+            _saveSuccess.value = false
+            
+            val result = repository.analyzeText(token, query, portion)
+            
+            result.onSuccess { response ->
+                val scanResults = response.results.map { item ->
+                    LastScanResult(
+                        foodName = item.foodName,
+                        calories = item.calories,
+                        baseCalories = (item.calories / (if (item.portionSize > 0) item.portionSize else 1f)).toInt(),
+                        protein = item.protein,
+                        carbs = item.carbs,
+                        fat = item.fat,
+                        portion = item.portionSize
+                    )
+                }
+                // Manuel girişi mevcut listeye EKLE
+                _lastScanResults.value = _lastScanResults.value + scanResults
+                _isAnalyzing.value = false
+                _isShowingReview.value = true
+            }.onFailure { exception ->
+                _error.value = exception.message ?: "Metin analizi sırasında bir hata oluştu"
+                _isAnalyzing.value = false
+            }
+        }
+    }
+
+    /**
+     * Porsiyonu günceller (Tüm liste için veya belirli bir index için eklenebilir, şimdilik basit tutuyoruz)
+     */
+    fun updatePortion(index: Int, newPortion: Float) {
+        val currentList = _lastScanResults.value.toMutableList()
+        if (index in currentList.indices) {
+            val current = currentList[index]
+            val ratio = newPortion / (if (current.portion > 0) current.portion else 1f)
             val newCalories = (current.baseCalories * newPortion).roundToInt()
-            current.copy(
-                portion = newPortion, 
+            currentList[index] = current.copy(
+                portion = newPortion,
                 calories = newCalories,
                 protein = current.protein * ratio,
                 carbs = current.carbs * ratio,
                 fat = current.fat * ratio
             )
+            _lastScanResults.value = currentList
         }
     }
 
     /**
      * Yemek adını manuel günceller.
      */
-    fun updateFoodName(newName: String) {
-        _lastScanResult.value = _lastScanResult.value?.copy(foodName = newName)
+    fun updateFoodName(index: Int, newName: String) {
+        val currentList = _lastScanResults.value.toMutableList()
+        if (index in currentList.indices) {
+            currentList[index] = currentList[index].copy(foodName = newName)
+            _lastScanResults.value = currentList
+        }
+    }
+
+    /**
+     * Bir tarama sonucunu listeden çıkarır.
+     */
+    fun removeScanResult(index: Int) {
+        val currentList = _lastScanResults.value.toMutableList()
+        if (index in currentList.indices) {
+            currentList.removeAt(index)
+            _lastScanResults.value = currentList
+            
+            // Eğer liste boşalırsa onay sayfasını kapat
+            if (currentList.isEmpty()) {
+                _isShowingReview.value = false
+            }
+        }
     }
 
     /**
@@ -122,46 +192,42 @@ class ScannerViewModel(
     }
 
     /**
-     * Öğünü onaylar ve kaydeder.
+     * Tüm saptanan öğünleri onaylar ve kaydeder.
      */
-    fun confirmMeal(token: String) {
-        val currentScan = _lastScanResult.value
-        if (currentScan == null || token.isEmpty()) return
+    fun confirmAllMeals(token: String) {
+        val currentScans = _lastScanResults.value
+        if (currentScans.isEmpty() || token.isEmpty()) return
 
         viewModelScope.launch {
             _isSaving.value = true
             _error.value = null
             
-            val request = SaveNutritionRequest(
-                foodName = currentScan.foodName,
-                calories = currentScan.calories,
-                protein = currentScan.protein,
-                carbs = currentScan.carbs,
-                fat = currentScan.fat,
-                portion = currentScan.portion
-            )
+            var success = true
+            currentScans.forEach { scan ->
+                val request = SaveNutritionRequest(
+                    foodName = scan.foodName,
+                    calories = scan.calories,
+                    protein = scan.protein,
+                    carbs = scan.carbs,
+                    fat = scan.fat,
+                    portion = scan.portion
+                )
+                repository.saveMeal(token, request).onFailure { success = false }
+            }
             
-            val result = repository.saveMeal(token, request)
-            
-            result.onSuccess {
+            if (success) {
                 _isSaving.value = false
                 _isShowingReview.value = false
                 _saveSuccess.value = true
                 
                 // Başarılı kaydı yerel geçmişe ekle
-                currentScan.let { scan ->
-                    _scanHistory.value = _scanHistory.value + scan
-                }
+                _scanHistory.value = _scanHistory.value + currentScans
                 
-                // Opsiyonel: Scan sonucunu temizle
-                _lastScanResult.value = null
+                // Kayıt sonrası temizle
+                _lastScanResults.value = emptyList()
                 _selectedImageUri.value = null
-            }.onFailure { exception ->
-                if (exception.message?.contains("401") == true) {
-                    _error.value = "Oturum süresi doldu. Lütfen yeniden giriş yapın."
-                } else {
-                    _error.value = exception.message ?: "Kayıt sırasında bir hata oluştu"
-                }
+            } else {
+                _error.value = "Bazı öğünler kaydedilemedi."
                 _isSaving.value = false
             }
         }

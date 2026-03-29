@@ -17,6 +17,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import com.dogukanpayal.victus_frontend.Screen
 
 @Composable
@@ -27,25 +31,30 @@ fun MainBottomNavigation(
     val primaryGreen = Color(0xFF22C55E)
     val inactiveGray = Color(0xFF94A3B8)
     val backgroundColor = Color.White
+    
+    // Calculate navigation bar padding to ensure background extends to the bottom
+    val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp), // Height to accommodate the protruding button
+            .height(100.dp + bottomPadding), // Grow to accommodate system navigation bar
         contentAlignment = Alignment.BottomCenter
     ) {
-        // Main Bar
+        // Main Bar Surface - Extends to the very bottom but content is padded
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(72.dp),
+                .height(72.dp + bottomPadding),
             color = backgroundColor,
-            tonalElevation = 8.dp,
+            tonalElevation = 12.dp,
             shadowElevation = 16.dp,
-            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         ) {
             Row(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = bottomPadding), // Push icons/labels above system bar
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Left Items
@@ -99,16 +108,16 @@ fun MainBottomNavigation(
 
         // Protruding Home Button
         val isHomeSelected = currentScreen == Screen.Home
-        val homeButtonBg = if (isHomeSelected) primaryGreen else Color(0xFFE2E8F0)
+        val homeButtonBg = if (isHomeSelected) primaryGreen else Color(0xFFF1F5F9)
         val homeIconColor = if (isHomeSelected) Color.White else primaryGreen
 
         Box(
             modifier = Modifier
-                .padding(bottom = 24.dp)
+                .padding(bottom = 28.dp + bottomPadding) // Align relative to the bar
                 .size(72.dp)
                 .clip(CircleShape)
                 .background(Color.White)
-                .padding(4.dp) // Border effect
+                .padding(5.dp) // Premium border effect
                 .clip(CircleShape)
                 .background(homeButtonBg)
                 .clickable { onNavigate(Screen.Home) },
@@ -118,7 +127,7 @@ fun MainBottomNavigation(
                 imageVector = Icons.Default.Home,
                 contentDescription = "Ana Sayfa",
                 tint = homeIconColor,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(34.dp)
             )
         }
     }

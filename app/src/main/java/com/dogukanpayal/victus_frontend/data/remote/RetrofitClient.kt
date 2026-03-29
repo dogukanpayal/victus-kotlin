@@ -8,7 +8,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.1.103:8080/" // Local network backend API
+    private const val BASE_URL = "http://192.168.1.50:8080/" // Local network backend API
 
     private val moshi = Moshi.Builder()
         .add(KotlinJsonAdapterFactory())
@@ -20,6 +20,9 @@ object RetrofitClient {
 
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(logging)
+        .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
         .build()
 
     val apiService: VictusApiService by lazy {

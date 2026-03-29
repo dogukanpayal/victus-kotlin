@@ -12,8 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
@@ -107,6 +108,8 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
+                        containerColor = Color.White, // Root background should be white
+                        contentWindowInsets = WindowInsets(0, 0, 0, 0), // No default insets for the content
                         topBar = {
                             if (showBottomBar) {
                                 CenterAlignedTopAppBar(
@@ -142,7 +145,11 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     ) { innerPadding ->
-                        Box(modifier = Modifier.padding(innerPadding)) {
+                        // Manual top padding for topBar since we disabled Scaffold insets
+                        val topPadding = if (showBottomBar) innerPadding.calculateTopPadding() else 0.dp
+                        val bottomPadding = if (showBottomBar) innerPadding.calculateBottomPadding() else 0.dp
+                        
+                        Box(modifier = Modifier.padding(top = topPadding, bottom = bottomPadding)) {
                             // Token geldiğinde kullanıcı bilgilerini çek
                             LaunchedEffect(setupToken.value) {
                                 if (setupToken.value.isNotEmpty()) {

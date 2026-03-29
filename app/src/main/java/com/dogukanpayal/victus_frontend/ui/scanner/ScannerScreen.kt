@@ -20,8 +20,10 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,13 +45,16 @@ import coil3.compose.AsyncImage
 @Composable
 fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
     val context = LocalContext.current
-    val lastScan by viewModel.lastScanResult.collectAsState()
+    val lastScans by viewModel.lastScanResults.collectAsState()
+    val isShowingReview by viewModel.isShowingReview.collectAsState()
     val scanHistory by viewModel.scanHistory.collectAsState()
     val isAnalyzing by viewModel.isAnalyzing.collectAsState()
     val isSaving by viewModel.isSaving.collectAsState()
     val saveSuccess by viewModel.saveSuccess.collectAsState()
     val selectedImageUri by viewModel.selectedImageUri.collectAsState()
     val error by viewModel.error.collectAsState()
+    
+    var isManualEntryDialogVisible by remember { mutableStateOf(false) }
 
     val primaryGreen = Color(0xFF22C55E)
     val lightGreenBg = Color(0xFFF0FDF4)
@@ -122,7 +127,6 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
     // ═══════════════════════════════════════════
     // Review Bottom Sheet
     // ═══════════════════════════════════════════
-    val isShowingReview by viewModel.isShowingReview.collectAsState()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     if (isShowingReview) {
@@ -133,149 +137,168 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             dragHandle = { BottomSheetDefaults.DragHandle(color = Color(0xFFE2E8F0)) }
         ) {
-            lastScan?.let { scan ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 24.dp, end = 24.dp, bottom = 40.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.85f)
+                    .padding(horizontal = 24.dp)
+            ) {
+                Text(
+                    text = "Bulunan Yiyecekler",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textDark,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
                 ) {
-                    Text(
-                        text = "Analiz Sonucu",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = textDark
-                    )
-                    
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Image Preview in Sheet
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(Color(0xFFF1F5F9))
-                    ) {
-                        AsyncImage(
-                            model = selectedImageUri ?: "🥗", // URI yoksa emoji (fallback)
-                            contentDescription = "Yemek",
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Food Name Input
-                    OutlinedTextField(
-                        value = scan.foodName,
-                        onValueChange = { viewModel.updateFoodName(it) },
-                        label = { Text("Yemek Adı") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = primaryGreen,
-                            focusedLabelColor = primaryGreen
-                        ),
-                        singleLine = true,
-                        enabled = !isSaving
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    var portionText by remember { mutableStateOf(scan.portion.toString()) }
-
-                    OutlinedTextField(
-                        value = portionText,
-                        onValueChange = { newValue ->
-                            if (newValue.isEmpty() || newValue.matches(Regex("^\\d*[.,]?\\d*$"))) {
-                                portionText = newValue
-                                val floatValue = newValue.replace(",", ".").toFloatOrNull()
-                                if (floatValue != null && floatValue > 0f) {
-                                    viewModel.updatePortion(floatValue)
-                                }
-                            }
-                        },
-                        label = { Text("Porsiyon (Örn: 1.5)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = primaryGreen,
-                            focusedLabelColor = primaryGreen
-                        ),
-                        singleLine = true,
-                        enabled = !isSaving
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // Summary Calories
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = Color(0xFFF8FAFC),
-                        shape = RoundedCornerShape(20.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(20.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text("Toplam Kalori", fontSize = 13.sp, color = textGray)
-                                Text(
-                                    text = "${scan.calories} kcal",
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = textDark
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.PlayArrow, // Onay ikonu olarak geçici
-                                contentDescription = null,
-                                tint = primaryGreen,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // Action Buttons
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { viewModel.dismissReview() },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            enabled = !isSaving,
+                    itemsIndexed(lastScans) { index, scan ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC)),
+                            shape = RoundedCornerShape(20.dp),
                             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFE2E8F0))
                         ) {
-                            Text("Vazgeç", color = textGray)
-                        }
-                        Button(
-                            onClick = { viewModel.confirmMeal(token) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            enabled = !isSaving,
-                            colors = ButtonDefaults.buttonColors(containerColor = primaryGreen)
-                        ) {
-                            if (isSaving) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = Color.White,
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Text("Öğünü Ekle", fontWeight = FontWeight.Bold)
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                // Delete / Remove Button
+                                IconButton(
+                                    onClick = { viewModel.removeScanResult(index) },
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(4.dp)
+                                        .size(32.dp),
+                                    enabled = !isSaving
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Kaldır",
+                                        tint = textGray.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        // Mini Icon/Emoji
+                                        Box(
+                                            modifier = Modifier
+                                                .size(40.dp)
+                                                .clip(RoundedCornerShape(10.dp))
+                                                .background(primaryGreen.copy(alpha = 0.1f)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Text("🍴", fontSize = 18.sp)
+                                        }
+                                        
+                                        // Food Name
+                                        OutlinedTextField(
+                                            value = scan.foodName,
+                                            onValueChange = { viewModel.updateFoodName(index, it) },
+                                            label = { Text("Yemek Adı", fontSize = 12.sp) },
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            singleLine = true,
+                                            enabled = !isSaving,
+                                            textStyle = androidx.compose.ui.text.TextStyle(fontSize = 14.sp),
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedTextColor = textDark,
+                                                unfocusedTextColor = textDark,
+                                                focusedBorderColor = primaryGreen,
+                                                unfocusedBorderColor = Color(0xFFE2E8F0)
+                                            )
+                                        )
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        // Portion
+                                        OutlinedTextField(
+                                            value = scan.portion.toString(),
+                                            onValueChange = { newValue ->
+                                                val floatValue = newValue.replace(",", ".").toFloatOrNull()
+                                                if (floatValue != null && floatValue > 0f) {
+                                                    viewModel.updatePortion(index, floatValue)
+                                                }
+                                            },
+                                            label = { Text("Porsiyon", fontSize = 12.sp) },
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(12.dp),
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                            singleLine = true,
+                                            enabled = !isSaving,
+                                            colors = OutlinedTextFieldDefaults.colors(
+                                                focusedTextColor = textDark,
+                                                unfocusedTextColor = textDark,
+                                                focusedBorderColor = primaryGreen,
+                                                unfocusedBorderColor = Color(0xFFE2E8F0)
+                                            )
+                                        )
+
+                                        // Calories Display
+                                        Column(
+                                            horizontalAlignment = Alignment.End,
+                                            modifier = Modifier.padding(start = 8.dp)
+                                        ) {
+                                            Text("Kalori", fontSize = 11.sp, color = textGray)
+                                            Text(
+                                                text = "${scan.calories} kcal",
+                                                fontSize = 18.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = primaryGreen
+                                            )
+                                        }
+                                    }
+                                }
                             }
+                        }
+                    }
+                }
+
+                // Action Buttons at Fixed bottom of Sheet
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { viewModel.dismissReview() },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = !isSaving
+                    ) {
+                        Text("Vazgeç", color = textGray)
+                    }
+                    Button(
+                        onClick = { viewModel.confirmAllMeals(token) },
+                        modifier = Modifier
+                            .weight(1.5f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = !isSaving,
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryGreen)
+                    ) {
+                        if (isSaving) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                        } else {
+                            Text("Hepsini Ekle", fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -428,30 +451,42 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
 
                     // Scanning Line Animation
                     val infiniteTransition = rememberInfiniteTransition(label = "scanning")
-                    val yOffset by infiniteTransition.animateFloat(
+                    val translateY by infiniteTransition.animateFloat(
                         initialValue = 0f,
-                        targetValue = 1f,
+                        targetValue = 240f,
                         animationSpec = infiniteRepeatable(
                             animation = tween(2000, easing = LinearEasing),
                             repeatMode = RepeatMode.Reverse
                         ),
-                        label = "yOffset"
+                        label = "scanningLine"
                     )
 
-                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(2.dp)
-                                .offset(y = maxHeight * yOffset)
-                                .background(
-                                    Brush.horizontalGradient(
-                                        listOf(Color.Transparent, primaryGreen, Color.Transparent)
-                                    )
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .height(2.dp)
+                            .align(Alignment.Center)
+                            .offset(y = (-120 + translateY.toInt()).dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color.Transparent, primaryGreen, Color.Transparent)
                                 )
-                        )
-                    }
+                            )
+                    )
                 }
+            }
+
+            if (isManualEntryDialogVisible) {
+                ManualEntryDialog(
+                    onDismiss = { isManualEntryDialogVisible = false },
+                    onSubmit = { name, port ->
+                        isManualEntryDialogVisible = false
+                        viewModel.analyzeTextPortion(name, port, token)
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
                 // Analiz ediliyor loading overlay
                 if (isAnalyzing) {
@@ -473,7 +508,7 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                         }
                     }
                 }
-            }
+
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -515,10 +550,13 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 ControlButton(
-                    icon = Icons.Default.Home,
-                    label = "Galeri",
+                    icon = if (selectedImageUri != null) Icons.Default.Close else Icons.Default.Home,
+                    label = if (selectedImageUri != null) "Temizle" else "Galeri",
                     primaryGreen = primaryGreen,
-                    onClick = { launchGallery() }
+                    onClick = { 
+                        if (selectedImageUri != null) viewModel.clearSelectedImage() 
+                        else launchGallery() 
+                    }
                 )
 
                 // Main Shutter Button
@@ -546,10 +584,10 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                 }
 
                 ControlButton(
-                    icon = Icons.Default.Settings,
-                    label = "Flaş",
+                    icon = Icons.Default.Edit,
+                    label = "Manuel",
                     primaryGreen = primaryGreen,
-                    onClick = { /* Flash toggle */ }
+                    onClick = { isManualEntryDialogVisible = true }
                 )
             }
 
@@ -722,4 +760,55 @@ fun ControlButton(icon: ImageVector, label: String, primaryGreen: Color, onClick
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = label, fontSize = 12.sp, color = Color(0xFF64748B))
     }
+}
+
+@Composable
+fun ManualEntryDialog(
+    onDismiss: () -> Unit,
+    onSubmit: (String, Double) -> Unit
+) {
+    var foodName by remember { mutableStateOf("") }
+    var portion by remember { mutableStateOf("1.0") }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Manuel Yemek Girişi", fontWeight = FontWeight.Bold) },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = foodName,
+                    onValueChange = { foodName = it },
+                    label = { Text("Yemek Adı") },
+                    placeholder = { Text("Örn: Tavuk Sote") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = portion,
+                    onValueChange = { portion = it },
+                    label = { Text("Porsiyon Adedi") },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { 
+                    val p = portion.toDoubleOrNull() ?: 1.0
+                    onSubmit(foodName, p)
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E))
+            ) {
+                Text("Ekle", color = Color.White)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("İptal")
+            }
+        }
+    )
 }
