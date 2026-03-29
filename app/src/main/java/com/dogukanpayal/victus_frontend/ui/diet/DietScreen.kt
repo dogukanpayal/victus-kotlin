@@ -8,14 +8,13 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -33,12 +32,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.dogukanpayal.victus_frontend.data.model.MealItem
 import com.dogukanpayal.victus_frontend.data.model.MealType
+import java.util.Locale
 
 @Composable
-fun DietScreen(viewModel: DietViewModel) {
+fun DietScreen(viewModel: DietViewModel, token: String = "") {
     val uiState by viewModel.uiState.collectAsState()
+
+    // Token geldiğinde veriyi yükle
+    LaunchedEffect(token) {
+        if (token.isNotEmpty()) {
+            viewModel.loadDailySummary(token)
+        }
+    }
 
     val primaryGreen = Color(0xFF22C55E)
     val lightGreenBg = Color(0xFFF0FDF4)
@@ -55,6 +61,10 @@ fun DietScreen(viewModel: DietViewModel) {
         animationSpec = tween(durationMillis = 1000),
         label = "calorieProgress"
     )
+
+    // Negatif kalori kontrolü
+    val isLimitExceeded = uiState.remainingCalories < 0
+    val limitExceededColor = Color(0xFFDC2626)
 
     Column(
         modifier = Modifier
@@ -173,9 +183,46 @@ fun DietScreen(viewModel: DietViewModel) {
                     )
                     CalorieStat(
                         label = "KALAN",
-                        value = "${uiState.remainingCalories}",
-                        color = Color(0xFFF97316)
+                        value = if (isLimitExceeded) "-${kotlin.math.abs(uiState.remainingCalories)}" else "${uiState.remainingCalories}",
+                        color = if (isLimitExceeded) limitExceededColor else Color(0xFFF97316)
                     )
+                }
+
+                // Limit aşıldı uyarısı
+                if (isLimitExceeded) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE2E2)),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(0.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "⚠️",
+                                fontSize = 18.sp
+                            )
+                            Column {
+                                Text(
+                                    text = "Kalori Limiti Aşıldı",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = limitExceededColor
+                                )
+                                Text(
+                                    text = "Günlük hedefini ${kotlin.math.abs(uiState.remainingCalories)} kalori kadar aştın",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF991B1B)
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -185,7 +232,7 @@ fun DietScreen(viewModel: DietViewModel) {
         // ═══════════════════════════════════════════
         // Macros Section
         // ═══════════════════════════════════════════
-        SectionHeader(title = "Makro Besinler", icon = Icons.Default.List, iconColor = primaryGreen)
+        SectionHeader(title = "Makro Besinler", icon = Icons.AutoMirrored.Filled.List, iconColor = primaryGreen)
         Spacer(modifier = Modifier.height(16.dp))
 
         Card(
@@ -200,22 +247,22 @@ fun DietScreen(viewModel: DietViewModel) {
             ) {
                 MacroProgressBar(
                     label = "Protein",
-                    value = "${uiState.proteinConsumed.toInt()}g",
-                    target = "${uiState.proteinGoal.toInt()}g",
+                    value = String.format(Locale.ROOT, "%.1f g", uiState.proteinConsumed),
+                    target = String.format(Locale.ROOT, "%.1f g", uiState.proteinGoal),
                     progress = if (uiState.proteinGoal > 0) (uiState.proteinConsumed / uiState.proteinGoal).coerceIn(0f, 1f) else 0f,
                     color = primaryGreen
                 )
                 MacroProgressBar(
                     label = "Karbonhidrat",
-                    value = "${uiState.carbsConsumed.toInt()}g",
-                    target = "${uiState.carbsGoal.toInt()}g",
+                    value = String.format(Locale.ROOT, "%.1f g", uiState.carbsConsumed),
+                    target = String.format(Locale.ROOT, "%.1f g", uiState.carbsGoal),
                     progress = if (uiState.carbsGoal > 0) (uiState.carbsConsumed / uiState.carbsGoal).coerceIn(0f, 1f) else 0f,
                     color = Color(0xFF3B82F6)
                 )
                 MacroProgressBar(
                     label = "Yağ",
-                    value = "${uiState.fatConsumed.toInt()}g",
-                    target = "${uiState.fatGoal.toInt()}g",
+                    value = String.format(Locale.ROOT, "%.1f g", uiState.fatConsumed),
+                    target = String.format(Locale.ROOT, "%.1f g", uiState.fatGoal),
                     progress = if (uiState.fatGoal > 0) (uiState.fatConsumed / uiState.fatGoal).coerceIn(0f, 1f) else 0f,
                     color = Color(0xFFF97316)
                 )

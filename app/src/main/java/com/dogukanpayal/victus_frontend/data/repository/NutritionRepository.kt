@@ -2,6 +2,7 @@ package com.dogukanpayal.victus_frontend.data.repository
 
 import android.content.Context
 import android.net.Uri
+import com.dogukanpayal.victus_frontend.data.model.DailySummaryResponse
 import com.dogukanpayal.victus_frontend.data.model.NutritionSummaryResponse
 import com.dogukanpayal.victus_frontend.data.model.NutritionAnalysisResponse
 import com.dogukanpayal.victus_frontend.data.model.SaveNutritionRequest
@@ -17,6 +18,7 @@ interface NutritionRepository {
     suspend fun analyzeText(token: String, query: String, portion: Double): Result<NutritionAnalysisResponse>
     suspend fun saveMeal(token: String, request: SaveNutritionRequest): Result<Unit>
     suspend fun getSummary(token: String): Result<NutritionSummaryResponse>
+    suspend fun getDailySummary(token: String): Result<DailySummaryResponse>
 }
 
 class NutritionRepositoryImpl(
@@ -87,6 +89,21 @@ class NutritionRepositoryImpl(
                 Result.failure(Exception("HTTP 401 Unauthorized"))
             } else {
                 Result.failure(Exception("Özet alınamadı: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getDailySummary(token: String): Result<DailySummaryResponse> {
+        return try {
+            val response = apiService.getDailySummary("Bearer $token")
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else if (response.code() == 401) {
+                Result.failure(Exception("HTTP 401 Unauthorized"))
+            } else {
+                Result.failure(Exception("Günlük özet alınamadı: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

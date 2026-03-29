@@ -46,4 +46,9 @@ interface VictusApiService {
     suspend fun getSummary(
         @Header("Authorization") token: String
     ): Response<NutritionSummaryResponse>
+
+    @GET("v1/nutrition/summary")
+    suspend fun getDailySummary(
+        @Header("Authorization") token: String
+    ): Response<DailySummaryResponse>
 }

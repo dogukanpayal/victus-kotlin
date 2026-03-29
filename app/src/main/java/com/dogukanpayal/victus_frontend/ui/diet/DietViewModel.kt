@@ -1,36 +1,70 @@
 package com.dogukanpayal.victus_frontend.ui.diet
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.dogukanpayal.victus_frontend.data.model.MealItem
 import com.dogukanpayal.victus_frontend.data.model.MealType
 import com.dogukanpayal.victus_frontend.data.model.NutritionUiState
+import com.dogukanpayal.victus_frontend.data.repository.NutritionRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class DietViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(NutritionUiState())
     val uiState: StateFlow<NutritionUiState> = _uiState.asStateFlow()
 
+    private val nutritionRepository = NutritionRepositoryImpl()
+
     init {
         loadMockData()
     }
 
     /**
-     * İleride bu fonksiyon repository üzerinden backend'den veri çekecek:
-     * GET /api/nutrition/daily-summary
+     * Backend'den günlük özet verilerini çek
+     * GET /v1/nutrition/summary
      */
-    fun loadDailySummary() {
-        // TODO: NutritionRepository.getDailySummary(date) entegrasyonu
-        loadMockData()
+    fun loadDailySummary(token: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            
+            val result = nutritionRepository.getDailySummary(token)
+            
+            result.getOrNull()?.let { summary ->
+                _uiState.update { state ->
+                    state.copy(
+                        dailyCalorieGoal = summary.dailyGoal,
+                        consumedCalories = summary.caloriesConsumed,
+                        remainingCalories = summary.caloriesRemaining,
+                        proteinConsumed = summary.macros.proteinConsumed.toFloat(),
+                        proteinGoal = summary.macros.proteinGoal.toFloat(),
+                        carbsConsumed = summary.macros.carbsConsumed.toFloat(),
+                        carbsGoal = summary.macros.carbsGoal.toFloat(),
+                        fatConsumed = summary.macros.fatConsumed.toFloat(),
+                        fatGoal = summary.macros.fatGoal.toFloat(),
+                        isLoading = false,
+                        error = null
+                    )
+                }
+            } ?: run {
+                _uiState.update { 
+                    it.copy(
+                        isLoading = false,
+                        error = result.exceptionOrNull()?.message ?: "Bilinmeyen bir hata oluştu"
+                    )
+                }
+                // Hata durumunda mock veri yükle (fallback)
+                loadMockData()
+            }
+        }
     }
 
     /**
      * Kullanıcı AI sonucunu onayladığında çağrılacak:
-     * POST /api/nutrition/save
+     * POST /v1/nutrition/save
      */
     fun addMeal(meal: MealItem) {
         _uiState.update { state ->
@@ -118,3 +152,7 @@ class DietViewModel : ViewModel() {
         }
     }
 }
+
+
+
+
