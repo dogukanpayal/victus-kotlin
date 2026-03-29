@@ -1,5 +1,6 @@
 package com.dogukanpayal.victus_frontend.ui.diet
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dogukanpayal.victus_frontend.data.model.MealItem
@@ -13,6 +14,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class DietViewModel : ViewModel() {
+
+    companion object {
+        private const val TAG = "DietViewModel"
+    }
 
     private val _uiState = MutableStateFlow(NutritionUiState())
     val uiState: StateFlow<NutritionUiState> = _uiState.asStateFlow()
@@ -30,10 +35,17 @@ class DietViewModel : ViewModel() {
     fun loadDailySummary(token: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
+            Log.d(TAG, "loadDailySummary: Başlatıldı")
             
             val result = nutritionRepository.getDailySummary(token)
             
             result.getOrNull()?.let { summary ->
+                Log.d(TAG, "loadDailySummary: Başarılı")
+                Log.d(TAG, "Summary - Daily Goal: ${summary.dailyGoal}, Consumed: ${summary.caloriesConsumed}")
+                Log.d(TAG, "Macros - Protein: ${summary.macros.proteinConsumed}/${summary.macros.proteinGoal}, " +
+                    "Carbs: ${summary.macros.carbsConsumed}/${summary.macros.carbsGoal}, " +
+                    "Fat: ${summary.macros.fatConsumed}/${summary.macros.fatGoal}")
+                
                 _uiState.update { state ->
                     state.copy(
                         dailyCalorieGoal = summary.dailyGoal,
@@ -50,10 +62,13 @@ class DietViewModel : ViewModel() {
                     )
                 }
             } ?: run {
+                val errorMessage = result.exceptionOrNull()?.message ?: "Bilinmeyen bir hata oluştu"
+                Log.e(TAG, "loadDailySummary: Hata - $errorMessage", result.exceptionOrNull())
+                
                 _uiState.update { 
                     it.copy(
                         isLoading = false,
-                        error = result.exceptionOrNull()?.message ?: "Bilinmeyen bir hata oluştu"
+                        error = errorMessage
                     )
                 }
                 // Hata durumunda mock veri yükle (fallback)

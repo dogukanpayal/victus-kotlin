@@ -2,6 +2,7 @@ package com.dogukanpayal.victus_frontend.data.repository
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.dogukanpayal.victus_frontend.data.model.DailySummaryResponse
 import com.dogukanpayal.victus_frontend.data.model.NutritionSummaryResponse
 import com.dogukanpayal.victus_frontend.data.model.NutritionAnalysisResponse
@@ -24,6 +25,10 @@ interface NutritionRepository {
 class NutritionRepositoryImpl(
     private val apiService: VictusApiService = com.dogukanpayal.victus_frontend.data.remote.RetrofitClient.apiService
 ) : NutritionRepository {
+
+    companion object {
+        private const val TAG = "NutritionRepository"
+    }
 
     override suspend fun analyzeImage(token: String, imageUri: Uri, context: Context): Result<NutritionAnalysisResponse> {
         return try {
@@ -98,14 +103,25 @@ class NutritionRepositoryImpl(
     override suspend fun getDailySummary(token: String): Result<DailySummaryResponse> {
         return try {
             val response = apiService.getDailySummary("Bearer $token")
+            
             if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
+                val summary = response.body()!!
+                Log.d(TAG, "getDailySummary: Başarılı")
+                Log.d(TAG, "Response Body: $summary")
+                Log.d(TAG, "Daily Goal: ${summary.dailyGoal}, Consumed: ${summary.caloriesConsumed}, Remaining: ${summary.caloriesRemaining}")
+                Log.d(TAG, "Macros - Protein: ${summary.macros.proteinConsumed}/${summary.macros.proteinGoal}, " +
+                    "Carbs: ${summary.macros.carbsConsumed}/${summary.macros.carbsGoal}, " +
+                    "Fat: ${summary.macros.fatConsumed}/${summary.macros.fatGoal}")
+                Result.success(summary)
             } else if (response.code() == 401) {
+                Log.e(TAG, "getDailySummary: HTTP 401 Unauthorized")
                 Result.failure(Exception("HTTP 401 Unauthorized"))
             } else {
+                Log.e(TAG, "getDailySummary: Hata - ${response.message()}, Code: ${response.code()}")
                 Result.failure(Exception("Günlük özet alınamadı: ${response.message()}"))
             }
         } catch (e: Exception) {
+            Log.e(TAG, "getDailySummary: Exception - ${e.message}", e)
             Result.failure(e)
         }
     }
