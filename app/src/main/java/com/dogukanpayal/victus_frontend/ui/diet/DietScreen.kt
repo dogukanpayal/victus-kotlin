@@ -18,7 +18,11 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
+import kotlin.OptIn
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,9 +39,11 @@ import androidx.compose.ui.unit.sp
 import com.dogukanpayal.victus_frontend.data.model.MealType
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DietScreen(viewModel: DietViewModel, token: String = "") {
     val uiState by viewModel.uiState.collectAsState()
+    val pullToRefreshState = rememberPullToRefreshState()
 
     // Token geldiğinde veriyi yükle
     LaunchedEffect(token) {
@@ -66,7 +72,17 @@ fun DietScreen(viewModel: DietViewModel, token: String = "") {
     val isLimitExceeded = uiState.remainingCalories < 0
     val limitExceededColor = Color(0xFFDC2626)
 
-    Column(
+    PullToRefreshBox(
+        isRefreshing = uiState.isLoading,
+        onRefresh = {
+            if (token.isNotEmpty()) {
+                viewModel.loadDailySummary(token)
+            }
+        },
+        state = pullToRefreshState,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFF8FAFC))
@@ -360,6 +376,7 @@ fun DietScreen(viewModel: DietViewModel, token: String = "") {
         }
 
         Spacer(modifier = Modifier.height(100.dp))
+        }
     }
 }
 
