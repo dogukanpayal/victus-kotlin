@@ -1,9 +1,12 @@
 package com.dogukanpayal.victus_frontend.data.repository
 
 import android.content.Context
+import android.graphics.Matrix
 import android.net.Uri
 import android.util.Log
+import androidx.exifinterface.media.ExifInterface
 import com.dogukanpayal.victus_frontend.data.model.DailySummaryResponse
+import com.dogukanpayal.victus_frontend.data.model.FoodLogItem
 import com.dogukanpayal.victus_frontend.data.model.NutritionSummaryResponse
 import com.dogukanpayal.victus_frontend.data.model.NutritionAnalysisResponse
 import com.dogukanpayal.victus_frontend.data.model.SaveNutritionRequest
@@ -20,6 +23,7 @@ interface NutritionRepository {
     suspend fun saveMeal(token: String, request: SaveNutritionRequest): Result<Unit>
     suspend fun getSummary(token: String): Result<NutritionSummaryResponse>
     suspend fun getDailySummary(token: String): Result<DailySummaryResponse>
+    suspend fun getMealHistory(token: String, date: String): Result<List<FoodLogItem>>
 }
 
 class NutritionRepositoryImpl(
@@ -126,24 +130,74 @@ class NutritionRepositoryImpl(
         }
     }
 
+    override suspend fun getMealHistory(token: String, date: String): Result<List<FoodLogItem>> {
+        return try {
+            val response = apiService.getMealHistory("Bearer $token", date)
+            if (response.isSuccessful && response.body() != null) {
+                val items = response.body()!!.meals.map { item ->
+                    FoodLogItem(
+                        id = item.id,
+                        foodName = item.foodName,
+                        calories = item.calories.toInt(),
+                        protein = item.protein.toFloat(),
+                        carbs = item.carbs.toFloat(),
+                        fat = item.fat.toFloat(),
+                        imageUrl = item.imageUrl,
+                        createdAt = item.createdAt ?: ""
+                    )
+                }
+                Result.success(items)
+            } else if (response.code() == 401) {
+                Result.failure(Exception("HTTP 401 Unauthorized"))
+            } else {
+                Result.failure(Exception("Öğün geçmişi alınamadı: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     private fun uriToFile(context: Context, uri: Uri): File {
         val tempFile = File(context.cacheDir, "temp_upload_${System.currentTimeMillis()}.webp")
+
         context.contentResolver.openInputStream(uri)?.use { inputStream ->
             val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
-            if (bitmap != null) {
-                FileOutputStream(tempFile).use { outputStream ->
-                    val format = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                        android.graphics.Bitmap.CompressFormat.WEBP_LOSSY
-                    } else {
-                        @Suppress("DEPRECATION")
-                        android.graphics.Bitmap.CompressFormat.WEBP
-                    }
-                    bitmap.compress(format, 80, outputStream)
+                ?: throw Exception("Görsel parçalanamadı veya bozuk.")
+
+            // EXIF orientation oku → bitmap'i döndür
+            val rotatedBitmap = context.contentResolver.openInputStream(uri)?.use { exifStream ->
+                val exif = ExifInterface(exifStream)
+                val orientation = exif.getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL
+                )
+                val rotation = when (orientation) {
+                    ExifInterface.ORIENTATION_ROTATE_90  -> 90f
+                    ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+                    ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+                    else -> 0f
                 }
-            } else {
-                throw Exception("Görsel parçalanamadı veya bozuk.")
+                if (rotation != 0f) {
+                    val matrix = Matrix().apply { postRotate(rotation) }
+                    android.graphics.Bitmap.createBitmap(
+                        bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
+                    ).also { if (it != bitmap) bitmap.recycle() }
+                } else {
+                    bitmap
+                }
+            } ?: bitmap
+
+            FileOutputStream(tempFile).use { outputStream ->
+                val format = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                    android.graphics.Bitmap.CompressFormat.WEBP_LOSSY
+                } else {
+                    @Suppress("DEPRECATION")
+                    android.graphics.Bitmap.CompressFormat.WEBP
+                }
+                rotatedBitmap.compress(format, 80, outputStream)
             }
         } ?: throw Exception("Görsel dosyası okunamadı.")
+
         return tempFile
     }
 }

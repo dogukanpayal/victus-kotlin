@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -32,11 +34,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.dogukanpayal.victus_frontend.data.model.FoodLogItem
 import com.dogukanpayal.victus_frontend.data.model.MealType
+import java.time.ZoneId
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -375,6 +387,53 @@ fun DietScreen(viewModel: DietViewModel, token: String = "") {
             }
         }
 
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // ═══════════════════════════════════════════
+        // Visual Food Log Section
+        // ═══════════════════════════════════════════
+        SectionHeader(
+            title = "Yemek Günlüğü",
+            icon = Icons.Default.Restaurant,
+            iconColor = Color(0xFF8B5CF6)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (uiState.foodLog.isEmpty()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F3FF)),
+                shape = RoundedCornerShape(24.dp),
+                elevation = CardDefaults.cardElevation(0.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "📸", fontSize = 36.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Henüz fotoğraf kaydedilmedi",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF1E293B),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Yemek fotoğrafı çektiğinde burada görünür",
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        } else {
+            FoodLogTimeline(items = uiState.foodLog)
+        }
+
         Spacer(modifier = Modifier.height(100.dp))
         }
     }
@@ -571,5 +630,190 @@ fun MealCard(
                 )
             }
         }
+    }
+}
+
+// ═════════════════════════════════════════════════
+// Visual Food Log Composables
+// ═════════════════════════════════════════════════
+
+private fun formatTimeLabel(isoTimestamp: String): String {
+    return try {
+        val odt = OffsetDateTime.parse(isoTimestamp)
+        val istanbul = odt.atZoneSameInstant(ZoneId.of("Europe/Istanbul"))
+        istanbul.format(DateTimeFormatter.ofPattern("HH:mm"))
+    } catch (_: Exception) {
+        "--:--"
+    }
+}
+
+@Composable
+fun FoodLogTimeline(items: List<FoodLogItem>) {
+    // Kronolojik sıralama (en eski önce)
+    val sorted = remember(items) { items.sortedBy { it.createdAt } }
+
+    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        sorted.forEachIndexed { index, item ->
+            FoodLogCard(
+                item = item,
+                isLast = index == sorted.lastIndex
+            )
+        }
+    }
+}
+
+@Composable
+private fun FoodLogCard(item: FoodLogItem, isLast: Boolean) {
+    val timeLabel = remember(item.createdAt) { formatTimeLabel(item.createdAt) }
+    val context = LocalPlatformContext.current
+
+    Row(modifier = Modifier.fillMaxWidth()) {
+        // ── Timeline sol sütun ───────────────────
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.width(52.dp)
+        ) {
+            // Zaman balonu
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFEDE9FE)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = timeLabel,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF7C3AED),
+                    textAlign = TextAlign.Center
+                )
+            }
+            // Bağlantı çizgisi (son eleman değilse)
+            if (!isLast) {
+                Box(
+                    modifier = Modifier
+                        .width(2.dp)
+                        .height(12.dp)
+                        .background(Color(0xFFDDD6FE))
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        // ── Kart sağ içerik ──────────────────────
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = if (isLast) 0.dp else 12.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(0.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Yemek fotoğrafı / placeholder
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0xFFF1F5F9)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!item.imageUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(item.imageUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = item.foodName,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(14.dp))
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Restaurant,
+                            contentDescription = null,
+                            tint = Color(0xFFCBD5E1),
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+
+                // Yemek bilgileri
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = item.foodName,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1E293B),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    // Makro chip'leri
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        MacroChip(
+                            label = "P",
+                            value = String.format(Locale.ROOT, "%.0fg", item.protein),
+                            bgColor = Color(0xFFDCFCE7),
+                            textColor = Color(0xFF16A34A)
+                        )
+                        MacroChip(
+                            label = "K",
+                            value = String.format(Locale.ROOT, "%.0fg", item.carbs),
+                            bgColor = Color(0xFFDBEAFE),
+                            textColor = Color(0xFF2563EB)
+                        )
+                        MacroChip(
+                            label = "Y",
+                            value = String.format(Locale.ROOT, "%.0fg", item.fat),
+                            bgColor = Color(0xFFFFEDD5),
+                            textColor = Color(0xFFEA580C)
+                        )
+                    }
+                }
+
+                // Kalori
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "${item.calories}",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF0F172A)
+                    )
+                    Text(
+                        text = "kcal",
+                        fontSize = 10.sp,
+                        color = Color(0xFF94A3B8)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MacroChip(label: String, value: String, bgColor: Color, textColor: Color) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(bgColor)
+            .padding(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(
+            text = "$label $value",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = textColor
+        )
     }
 }

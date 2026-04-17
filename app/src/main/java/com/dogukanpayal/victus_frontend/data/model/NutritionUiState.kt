@@ -11,6 +11,7 @@ data class NutritionUiState(
     val fatConsumed: Float = 0f,
     val fatGoal: Float = 73f,
     val meals: List<MealItem> = emptyList(),
+    val foodLog: List<FoodLogItem> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )

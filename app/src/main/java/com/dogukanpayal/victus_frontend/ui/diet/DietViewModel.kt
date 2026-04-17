@@ -3,6 +3,7 @@ package com.dogukanpayal.victus_frontend.ui.diet
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dogukanpayal.victus_frontend.data.model.FoodLogItem
 import com.dogukanpayal.victus_frontend.data.model.MealItem
 import com.dogukanpayal.victus_frontend.data.model.MealType
 import com.dogukanpayal.victus_frontend.data.model.NutritionUiState
@@ -12,6 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class DietViewModel : ViewModel() {
 
@@ -61,6 +64,8 @@ class DietViewModel : ViewModel() {
                         error = null
                     )
                 }
+                // Food log'u aynı token ile yükle
+                loadFoodLog(token)
             } ?: run {
                 val errorMessage = result.exceptionOrNull()?.message ?: "Bilinmeyen bir hata oluştu"
                 Log.e(TAG, "loadDailySummary: Hata - $errorMessage", result.exceptionOrNull())
@@ -74,6 +79,21 @@ class DietViewModel : ViewModel() {
                 // Hata durumunda mock veri yükle (fallback)
                 loadMockData()
             }
+        }
+    }
+
+    /**
+     * Backend'den bugünkü yemek geçmişini çek (fotoğraf + makrolar için)
+     * GET /v1/nutrition/meals?date=TODAY
+     */
+    fun loadFoodLog(token: String) {
+        viewModelScope.launch {
+            val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+            val result = nutritionRepository.getMealHistory(token, today)
+            result.getOrNull()?.let { items ->
+                Log.d(TAG, "loadFoodLog: ${items.size} öğün yüklendi")
+                _uiState.update { it.copy(foodLog = items) }
+            } ?: Log.w(TAG, "loadFoodLog: Hata - ${result.exceptionOrNull()?.message}")
         }
     }
 

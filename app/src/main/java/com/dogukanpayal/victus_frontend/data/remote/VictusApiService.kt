@@ -51,4 +51,10 @@ interface VictusApiService {
     suspend fun getDailySummary(
         @Header("Authorization") token: String
     ): Response<DailySummaryResponse>
+
+    @GET("v1/nutrition/meals")
+    suspend fun getMealHistory(
+        @Header("Authorization") token: String,
+        @Query("date") date: String
+    ): Response<MealHistoryResponse>
 }

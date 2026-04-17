@@ -10,7 +10,9 @@ data class MealItem(
     val fat: Float,
     val mealType: MealType,
     val portionSize: Float = 1.0f,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val imageUrl: String? = null,
+    val createdAt: String? = null
 )
 
 enum class MealType(val displayName: String) {

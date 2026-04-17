@@ -49,8 +49,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
     buildFeatures {
         compose = true
@@ -84,6 +84,9 @@ dependencies {
     // Coil (Image Loading)
     implementation("io.coil-kt.coil3:coil-compose:3.0.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.0")
+
+    // EXIF rotation support
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -92,4 +95,8 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+kotlin {
+    jvmToolchain(21)
 }

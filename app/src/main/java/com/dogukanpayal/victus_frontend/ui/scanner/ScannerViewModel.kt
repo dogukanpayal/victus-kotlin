@@ -76,7 +76,8 @@ class ScannerViewModel(
                         protein = item.protein,
                         carbs = item.carbs,
                         fat = item.fat,
-                        portion = item.portionSize
+                        portion = item.portionSize,
+                        imageUrl = response.imageUrl  // Supabase'e yüklenen fotoğraf URL'si
                     )
                 }
                 _lastScanResults.value = scanResults
@@ -210,7 +211,8 @@ class ScannerViewModel(
                     protein = scan.protein,
                     carbs = scan.carbs,
                     fat = scan.fat,
-                    portion = scan.portion
+                    portion = scan.portion,
+                    imageUrl = scan.imageUrl  // Fotoğraf URL'sini kaydet
                 )
                 repository.saveMeal(token, request).onFailure { success = false }
             }
@@ -295,5 +297,6 @@ data class LastScanResult(
     val protein: Float,
     val carbs: Float,
     val fat: Float,
-    val portion: Float
+    val portion: Float,
+    val imageUrl: String? = null
 )
