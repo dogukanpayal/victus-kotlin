@@ -19,4 +19,13 @@ interface DietPlanRepository {
     suspend fun getSavedPlan(): DietPlan?
     suspend fun savePlan(plan: DietPlan)
     suspend fun clearPlan()
+
+    /**
+     * Günlük öğünleri hedefle kıyaslayarak AI destekli geri bildirim alır.
+     */
+    suspend fun analyzeDietCompliance(
+        token: String,
+        meals: List<com.dogukanpayal.victus_frontend.data.model.MealItem>,
+        target: com.dogukanpayal.victus_frontend.data.model.DailyDietPlan
+    ): Result<String>
 }

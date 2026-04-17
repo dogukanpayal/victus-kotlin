@@ -106,4 +106,47 @@ class DietPlanRepositoryImpl(private val context: Context) : DietPlanRepository 
             days = days
         )
     }
+
+    override suspend fun analyzeDietCompliance(
+        token: String,
+        meals: List<com.dogukanpayal.victus_frontend.data.model.MealItem>,
+        target: DailyDietPlan
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            // Plan total calories target
+            val targetCalories = target.meals.mapNotNull { it.calories }.sum().toDouble()
+            // Assume default macro ratios if explicitly not provided, just as mock
+            val targetDTO = com.dogukanpayal.victus_frontend.data.model.DietTargetDTO(
+                targetCalories = if (targetCalories > 0) targetCalories else 2000.0,
+                targetProtein = 150.0,
+                targetCarbs = 200.0,
+                targetFat = 60.0
+            )
+
+            val consumedMeals = meals.map {
+                com.dogukanpayal.victus_frontend.data.model.ConsumedMealDTO(
+                    name = it.name,
+                    calories = it.calories.toDouble(),
+                    protein = it.protein.toDouble(),
+                    carbs = it.carbs.toDouble(),
+                    fat = it.fat.toDouble()
+                )
+            }
+
+            val request = com.dogukanpayal.victus_frontend.data.model.ComplianceRequest(
+                consumedMeals = consumedMeals,
+                dailyTarget = targetDTO
+            )
+
+            val service = com.dogukanpayal.victus_frontend.data.remote.RetrofitClient.apiService
+            val response = service.analyzeDietCompliance("Bearer $token", request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!.feedback)
+            } else {
+                Result.failure(Exception("Analiz alınamadı: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

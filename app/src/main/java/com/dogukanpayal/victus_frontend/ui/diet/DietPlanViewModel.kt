@@ -18,7 +18,9 @@ data class DietPlanUiState(
     val selectedDayIndex: Int = 0,
     val isUploading: Boolean = false,
     val uploadError: String? = null,
-    val showUploadSheet: Boolean = false
+    val showUploadSheet: Boolean = false,
+    val isAnalyzingCompliance: Boolean = false,
+    val complianceFeedback: String? = null
 )
 
 class DietPlanViewModel(
@@ -94,5 +96,26 @@ class DietPlanViewModel(
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(uploadError = null)
+    }
+
+    fun analyzeCompliance(token: String, meals: List<com.dogukanpayal.victus_frontend.data.model.MealItem>) {
+        val plan = _uiState.value.plan ?: return
+        val currentDay = plan.days.getOrNull(getTodayIndex()) ?: return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isAnalyzingCompliance = true, complianceFeedback = null)
+            val result = repository.analyzeDietCompliance(token, meals, currentDay)
+            result.onSuccess { feedback ->
+                _uiState.value = _uiState.value.copy(
+                    isAnalyzingCompliance = false,
+                    complianceFeedback = feedback
+                )
+            }.onFailure {
+                _uiState.value = _uiState.value.copy(
+                    isAnalyzingCompliance = false,
+                    complianceFeedback = "Analiz sırasında bir hata oluştu: ${it.message}"
+                )
+            }
+        }
     }
 }

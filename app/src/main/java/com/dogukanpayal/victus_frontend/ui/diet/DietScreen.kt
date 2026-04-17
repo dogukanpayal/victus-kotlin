@@ -308,7 +308,8 @@ fun DietScreen(
         // ═══════════════════════════════════════════
         DietPlanSection(
             viewModel = dietPlanViewModel,
-            token = token
+            token = token,
+            meals = uiState.meals
         )
 
         Spacer(modifier = Modifier.height(24.dp))

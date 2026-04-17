@@ -11,6 +11,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dogukanpayal.victus_frontend.data.model.DietMeal
 import com.dogukanpayal.victus_frontend.data.model.DietPlan
+import com.dogukanpayal.victus_frontend.data.model.MealItem
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,6 +34,7 @@ import kotlinx.coroutines.launch
 fun DietPlanSection(
     viewModel: DietPlanViewModel,
     token: String,
+    meals: List<MealItem>,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -71,6 +75,15 @@ fun DietPlanSection(
                 selectedDayIndex = uiState.selectedDayIndex,
                 onDaySelected = { viewModel.onDaySelected(it) },
                 onDeleteClick = { viewModel.onDeletePlan() }
+            )
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // AI Analysis Output / Button
+            DietComplianceCard(
+                isAnalyzing = uiState.isAnalyzingCompliance,
+                feedback = uiState.complianceFeedback,
+                onAnalyzeClick = { viewModel.analyzeCompliance(token, meals) }
             )
         }
     }
@@ -286,6 +299,74 @@ private fun DietMealCard(meal: DietMeal) {
                 fontSize = 14.sp,
                 color = Color(0xFF475569)
             )
+        }
+    }
+}
+
+@Composable
+private fun DietComplianceCard(
+    isAnalyzing: Boolean,
+    feedback: String?,
+    onAnalyzeClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFEFF6FF)),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 12.dp)
+            ) {
+                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color(0xFF3B82F6), modifier = Modifier.size(20.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    "Yapay Zeka Diyet Asistanı",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1E3A8A)
+                )
+            }
+
+            if (isAnalyzing) {
+                Box(modifier = Modifier.fillMaxWidth().height(80.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFF3B82F6), modifier = Modifier.size(32.dp))
+                }
+            } else if (feedback != null) {
+                Text(
+                    text = feedback,
+                    fontSize = 15.sp,
+                    color = Color(0xFF1E3A8A),
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                Button(
+                    onClick = onAnalyzeClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDBEAFE), contentColor = Color(0xFF1E3A8A))
+                ) {
+                    Text("Tekrar Analiz Et", fontWeight = FontWeight.SemiBold)
+                }
+            } else {
+                Text(
+                    text = "Günün öğünlerini diyet planınla kıyaslayarak anlık değerlendirme al.",
+                    fontSize = 14.sp,
+                    color = Color(0xFF60A5FA),
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                Button(
+                    onClick = onAnalyzeClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6))
+                ) {
+                    Text("Günü Analiz Et", fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }

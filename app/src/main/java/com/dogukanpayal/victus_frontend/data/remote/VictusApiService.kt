@@ -57,4 +57,10 @@ interface VictusApiService {
         @Header("Authorization") token: String,
         @Query("date") date: String
     ): Response<MealHistoryResponse>
+
+    @POST("v1/nutrition/analyze-compliance")
+    suspend fun analyzeDietCompliance(
+        @Header("Authorization") token: String,
+        @Body request: ComplianceRequest
+    ): Response<ComplianceResponse>
 }
