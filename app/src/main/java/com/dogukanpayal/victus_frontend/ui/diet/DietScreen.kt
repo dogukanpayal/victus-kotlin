@@ -53,7 +53,11 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DietScreen(viewModel: DietViewModel, token: String = "") {
+fun DietScreen(
+    viewModel: DietViewModel,
+    dietPlanViewModel: DietPlanViewModel,
+    token: String = ""
+) {
     val uiState by viewModel.uiState.collectAsState()
     val pullToRefreshState = rememberPullToRefreshState()
 
@@ -297,95 +301,15 @@ fun DietScreen(viewModel: DietViewModel, token: String = "") {
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+
 
         // ═══════════════════════════════════════════
-        // Meal List Section
+        // AI 7-Day Diet Plan Section
         // ═══════════════════════════════════════════
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Öğün Listesi",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = textDark
-            )
-            Row(
-                modifier = Modifier.clickable { /* TODO: Navigate to Scanner for adding meal */ },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.AddCircle,
-                    contentDescription = null,
-                    tint = primaryGreen,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "Öğün Ekle",
-                    color = primaryGreen,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Meals
-        if (uiState.meals.isEmpty()) {
-            // Empty state
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = lightGreenBg),
-                shape = RoundedCornerShape(24.dp),
-                elevation = CardDefaults.cardElevation(0.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "🍽️",
-                        fontSize = 48.sp
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Henüz öğün eklenmedi",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = textDark,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "Yemek fotoğrafı çekerek öğün ekleyebilirsin",
-                        fontSize = 13.sp,
-                        color = textGray,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        } else {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                uiState.meals.forEach { meal ->
-                    val (icon, iconBg, iconTint) = getMealTypeVisuals(meal.mealType)
-                    MealCard(
-                        title = meal.name,
-                        description = meal.description,
-                        calories = "${meal.calories}",
-                        icon = icon,
-                        iconBg = iconBg,
-                        iconTint = iconTint
-                    )
-                }
-            }
-        }
+        DietPlanSection(
+            viewModel = dietPlanViewModel,
+            token = token
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 

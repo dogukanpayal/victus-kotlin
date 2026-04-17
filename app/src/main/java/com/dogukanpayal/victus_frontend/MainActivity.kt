@@ -39,6 +39,7 @@ import com.dogukanpayal.victus_frontend.ui.exercise.ExerciseScreen
 import com.dogukanpayal.victus_frontend.ui.exercise.ExerciseViewModel
 import com.dogukanpayal.victus_frontend.ui.diet.DietScreen
 import com.dogukanpayal.victus_frontend.ui.diet.DietViewModel
+import com.dogukanpayal.victus_frontend.ui.diet.DietPlanViewModel
 import com.dogukanpayal.victus_frontend.ui.scanner.ScannerScreen
 import com.dogukanpayal.victus_frontend.ui.scanner.ScannerViewModel
 import com.dogukanpayal.victus_frontend.ui.components.MainBottomNavigation
@@ -185,6 +186,7 @@ class MainActivity : ComponentActivity() {
                             val workoutViewModel = remember { WorkoutViewModel() }
                             val exerciseViewModel = remember { ExerciseViewModel() }
                             val dietViewModel = remember { DietViewModel() }
+                            val dietPlanViewModel = remember { DietPlanViewModel(context = context) }
                             val scannerViewModel = remember { ScannerViewModel() }
 
                             val mainScreens = listOf(
@@ -255,7 +257,11 @@ class MainActivity : ComponentActivity() {
                                             Screen.Home -> HomeScreen(viewModel = homeViewModel)
                                             Screen.Workout -> WorkoutScreen(viewModel = workoutViewModel)
                                             Screen.Exercise -> ExerciseScreen(viewModel = exerciseViewModel)
-                                            Screen.Diet -> DietScreen(viewModel = dietViewModel, token = setupToken.value)
+                                            Screen.Diet -> DietScreen(
+                                                viewModel = dietViewModel,
+                                                dietPlanViewModel = dietPlanViewModel,
+                                                token = setupToken.value
+                                            )
                                             Screen.Scanner -> ScannerScreen(viewModel = scannerViewModel, token = setupToken.value)
                                             else -> {}
                                         }
