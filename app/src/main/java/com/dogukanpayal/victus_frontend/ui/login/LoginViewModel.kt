@@ -1,17 +1,20 @@
 package com.dogukanpayal.victus_frontend.ui.login
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dogukanpayal.victus_frontend.data.model.LoginRequest
 import com.dogukanpayal.victus_frontend.data.repository.AuthRepository
 import com.dogukanpayal.victus_frontend.data.repository.AuthRepositoryImpl
+import com.dogukanpayal.victus_frontend.data.storage.SessionManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class LoginViewModel(
-    private val authRepository: AuthRepository = AuthRepositoryImpl()
+    private val authRepository: AuthRepository = AuthRepositoryImpl(),
+    private val sessionManager: SessionManager? = null
 ) : ViewModel() {
 
     private val _email = MutableStateFlow("")
@@ -35,21 +38,10 @@ class LoginViewModel(
     private val _accessToken = MutableStateFlow("")
     val accessToken: StateFlow<String> = _accessToken.asStateFlow()
 
-    fun onEmailChanged(email: String) {
-        _email.value = email
-    }
-
-    fun onPasswordChanged(password: String) {
-        _password.value = password
-    }
-
-    fun onRememberMeChanged(rememberMe: Boolean) {
-        _rememberMe.value = rememberMe
-    }
-
-    fun togglePasswordVisibility() {
-        _passwordVisible.value = !_passwordVisible.value
-    }
+    fun onEmailChanged(email: String) { _email.value = email }
+    fun onPasswordChanged(password: String) { _password.value = password }
+    fun onRememberMeChanged(rememberMe: Boolean) { _rememberMe.value = rememberMe }
+    fun togglePasswordVisibility() { _passwordVisible.value = !_passwordVisible.value }
 
     fun onLoginClicked() {
         if (_email.value.isBlank() || _password.value.isBlank()) {
@@ -60,33 +52,28 @@ class LoginViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             _loginResult.value = null
-            
+
             val result = authRepository.login(
-                LoginRequest(
-                    email = _email.value,
-                    password = _password.value
-                )
+                LoginRequest(email = _email.value, password = _password.value)
             )
-            
+
             _loginResult.value = result
             _isLoading.value = false
-            
-            // AccessToken'ı set et login başarılı olursa
+
             result.onSuccess { authSession ->
                 _accessToken.value = authSession.accessToken
+                // Beni Hatırla seçiliyse token'ı kalıcı kaydet
+                if (_rememberMe.value) {
+                    sessionManager?.saveSession(authSession.accessToken)
+                } else {
+                    sessionManager?.clearSession()
+                }
             }
         }
     }
 
-    fun clearResult() {
-        _loginResult.value = null
-    }
+    fun clearResult() { _loginResult.value = null }
 
-    fun onGoogleLoginClicked() {
-        println("Google Login Clicked")
-    }
-
-    fun onAppleLoginClicked() {
-        println("Apple Login Clicked")
-    }
+    fun onGoogleLoginClicked() { println("Google Login Clicked") }
+    fun onAppleLoginClicked() { println("Apple Login Clicked") }
 }

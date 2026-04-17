@@ -44,6 +44,7 @@ import com.dogukanpayal.victus_frontend.ui.scanner.ScannerViewModel
 import com.dogukanpayal.victus_frontend.ui.components.MainBottomNavigation
 import com.dogukanpayal.victus_frontend.ui.components.MainDrawerContent
 import com.dogukanpayal.victus_frontend.data.repository.ProfileRepositoryImpl
+import com.dogukanpayal.victus_frontend.data.storage.SessionManager
 
 enum class Screen { Login, Register, SetupProfile, Profile, EditProfile, Home, Workout, Exercise, Diet, Scanner }
 
@@ -67,6 +68,17 @@ class MainActivity : ComponentActivity() {
                 val setupEmail = remember { mutableStateOf("") }
                 val setupFullName = remember { mutableStateOf("") }
                 val profileRepository = remember { ProfileRepositoryImpl() }
+                val context = LocalContext.current.applicationContext
+                val sessionManager = remember { SessionManager(context) }
+
+                // Uygulama açılışında kaydedilmiş token kontrolü
+                LaunchedEffect(Unit) {
+                    val savedToken = sessionManager.getSavedToken()
+                    if (!savedToken.isNullOrBlank()) {
+                        setupToken.value = savedToken
+                        currentScreen.value = Screen.Home
+                    }
+                }
 
                 val showBottomBar = currentScreen.value in listOf(
                     Screen.Home, Screen.Workout, Screen.Exercise, Screen.Diet, Screen.Scanner
@@ -100,6 +112,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onLogoutClick = {
                                     scope.launch { drawerState.close() }
+                                    sessionManager.clearSession()
+                                    setupToken.value = ""
                                     currentScreen.value = Screen.Login
                                 }
                             )
@@ -162,11 +176,10 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            val loginViewModel = remember { LoginViewModel() }
+                            val loginViewModel = remember { LoginViewModel(sessionManager = sessionManager) }
                             val registerViewModel = remember { RegisterViewModel() }
                             val setupProfileViewModel = remember { SetupProfileViewModel() }
                             val profileViewModel = remember { ProfileViewModel() }
-                            val context = LocalContext.current.applicationContext
                             val editProfileViewModel = remember { EditProfileViewModel(context = context) }
                             val homeViewModel = remember { HomeViewModel() }
                             val workoutViewModel = remember { WorkoutViewModel() }
@@ -255,6 +268,7 @@ class MainActivity : ComponentActivity() {
                                     onNavigateBack = { currentScreen.value = Screen.Home },
                                     onNavigateToEditProfile = { currentScreen.value = Screen.EditProfile },
                                     onLogout = {
+                                        sessionManager.clearSession()
                                         setupToken.value = ""
                                         currentScreen.value = Screen.Login
                                     }
