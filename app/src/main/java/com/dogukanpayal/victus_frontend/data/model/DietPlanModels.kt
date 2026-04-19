@@ -7,7 +7,10 @@ data class DietMeal(
     val name: String,
     val time: String, // "Kahvaltı", "Öğle", "Akşam", "Ara Öğün"
     val description: String,
-    val calories: Int? = null
+    val calories: Int? = null,
+    val protein: Double? = null,
+    val carbs: Double? = null,
+    val fat: Double? = null
 )
 
 @JsonClass(generateAdapter = true)

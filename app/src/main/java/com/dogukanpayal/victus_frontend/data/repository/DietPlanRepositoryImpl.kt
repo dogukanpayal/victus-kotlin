@@ -72,7 +72,10 @@ class DietPlanRepositoryImpl(private val context: Context) : DietPlanRepository 
                             name = item.foodName,
                             time = item.mealType,
                             description = "Porsiyon bilgisi: ${item.mealType}",
-                            calories = item.calories.toInt()
+                            calories = item.calories.toInt(),
+                            protein = item.protein,
+                            carbs = item.carbs,
+                            fat = item.fat
                         )
                     }
                     
@@ -186,12 +189,15 @@ class DietPlanRepositoryImpl(private val context: Context) : DietPlanRepository 
         try {
             // Plan total calories target
             val targetCalories = target.meals.mapNotNull { it.calories }.sum().toDouble()
-            // Assume default macro ratios if explicitly not provided, just as mock
+            val targetProtein = target.meals.mapNotNull { it.protein }.sum()
+            val targetCarbs = target.meals.mapNotNull { it.carbs }.sum()
+            val targetFat = target.meals.mapNotNull { it.fat }.sum()
+
             val targetDTO = com.dogukanpayal.victus_frontend.data.model.DietTargetDTO(
                 targetCalories = if (targetCalories > 0) targetCalories else 2000.0,
-                targetProtein = 150.0,
-                targetCarbs = 200.0,
-                targetFat = 60.0
+                targetProtein = if (targetProtein > 0) targetProtein else 150.0,
+                targetCarbs = if (targetCarbs > 0) targetCarbs else 200.0,
+                targetFat = if (targetFat > 0) targetFat else 60.0
             )
 
             val consumedMeals = meals.map {

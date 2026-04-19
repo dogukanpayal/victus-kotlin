@@ -85,7 +85,21 @@ class DietViewModel : ViewModel() {
             val result = nutritionRepository.getMealHistory(token, today)
             result.getOrNull()?.let { items ->
                 Log.d(TAG, "loadFoodLog: ${items.size} öğün yüklendi")
-                _uiState.update { it.copy(foodLog = items) }
+                val mealItems = items.map { foodItem ->
+                    MealItem(
+                        id = foodItem.id,
+                        name = foodItem.foodName,
+                        description = "",
+                        calories = foodItem.calories,
+                        protein = foodItem.protein,
+                        carbs = foodItem.carbs,
+                        fat = foodItem.fat,
+                        mealType = MealType.SNACK, // Default for logs if not specified
+                        imageUrl = foodItem.imageUrl,
+                        createdAt = foodItem.createdAt
+                    )
+                }
+                _uiState.update { it.copy(foodLog = items, meals = mealItems) }
             } ?: Log.w(TAG, "loadFoodLog: Hata - ${result.exceptionOrNull()?.message}")
         }
     }
