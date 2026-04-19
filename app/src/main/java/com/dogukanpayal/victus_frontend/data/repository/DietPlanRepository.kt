@@ -5,10 +5,6 @@ import android.net.Uri
 import com.dogukanpayal.victus_frontend.data.model.DietPlan
 
 interface DietPlanRepository {
-    /**
-     * Diyet listesini (PDF veya görsel) verip 7 günlük plan döner.
-     * Şimdilik backend olmadığı için yerel bir mock plan döndürüyor.
-     */
     suspend fun analyzeDietPlan(
         context: Context,
         uri: Uri,
@@ -16,6 +12,7 @@ interface DietPlanRepository {
         token: String
     ): Result<DietPlan>
 
+    suspend fun fetchActivePlan(token: String): Result<DietPlan?>
     suspend fun getSavedPlan(): DietPlan?
     suspend fun savePlan(plan: DietPlan)
     suspend fun clearPlan()

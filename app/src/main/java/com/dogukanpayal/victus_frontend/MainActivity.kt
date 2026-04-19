@@ -79,6 +79,20 @@ class MainActivity : ComponentActivity() {
                         setupToken.value = savedToken
                         currentScreen.value = Screen.Home
                     }
+
+                    // Global auth olaylarını dinle (örn: 401 Unauthorized)
+                    com.dogukanpayal.victus_frontend.data.remote.AuthEventBus.authEvents.collect { event ->
+                        when (event) {
+                            is com.dogukanpayal.victus_frontend.data.remote.AuthEvent.Unauthorized -> {
+                                scope.launch {
+                                    sessionManager.clearSession()
+                                    setupToken.value = ""
+                                    currentScreen.value = Screen.Login
+                                    drawerState.close()
+                                }
+                            }
+                        }
+                    }
                 }
 
                 val showBottomBar = currentScreen.value in listOf(
@@ -254,7 +268,10 @@ class MainActivity : ComponentActivity() {
                                         userScrollEnabled = true
                                     ) { page ->
                                         when (mainScreens[page]) {
-                                            Screen.Home -> HomeScreen(viewModel = homeViewModel)
+                                            Screen.Home -> HomeScreen(
+                                                viewModel = homeViewModel,
+                                                token = setupToken.value
+                                            )
                                             Screen.Workout -> WorkoutScreen(viewModel = workoutViewModel)
                                             Screen.Exercise -> ExerciseScreen(viewModel = exerciseViewModel)
                                             Screen.Diet -> DietScreen(

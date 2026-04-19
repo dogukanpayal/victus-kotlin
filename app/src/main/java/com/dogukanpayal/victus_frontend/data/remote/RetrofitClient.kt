@@ -2,6 +2,7 @@ package com.dogukanpayal.victus_frontend.data.remote
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -20,9 +21,21 @@ object RetrofitClient {
 
     private val httpClient = OkHttpClient.Builder()
         .addInterceptor(logging)
-        .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-        .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-        .writeTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+        .addInterceptor { chain ->
+            val request = chain.request()
+            val response = chain.proceed(request)
+            
+            if (response.code == 401) {
+                // Global logout event on 401 Unauthorized
+                runBlocking {
+                    AuthEventBus.emit(AuthEvent.Unauthorized)
+                }
+            }
+            response
+        }
+        .connectTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(120, java.util.concurrent.TimeUnit.SECONDS)
         .build()
 
     val apiService: VictusApiService by lazy {

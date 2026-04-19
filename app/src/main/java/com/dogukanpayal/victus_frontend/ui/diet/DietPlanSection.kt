@@ -35,6 +35,7 @@ fun DietPlanSection(
     viewModel: DietPlanViewModel,
     token: String,
     meals: List<MealItem>,
+    onParseDiet: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -116,6 +117,35 @@ fun DietPlanSection(
                     Text("Dosya Seç (Görsel veya PDF)", color = Color(0xFF475569), fontWeight = FontWeight.Bold)
                 }
 
+                var textContent by remember { mutableStateOf("") }
+                
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text("Veya Metin Olarak Yapıştır", fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF475569))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = textContent,
+                        onValueChange = { textContent = it },
+                        modifier = Modifier.fillMaxWidth().height(150.dp),
+                        placeholder = { Text("Sabah: 2 yumurta, 1 dilim tam buğday ekmeği...", fontSize = 12.sp) },
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { 
+                            if (textContent.isNotBlank()) {
+                                onParseDiet(textContent)
+                                viewModel.dismissUploadSheet()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED)),
+                        enabled = textContent.isNotBlank()
+                    ) {
+                        Text("Yapay Zeka ile Çözümle", fontWeight = FontWeight.Bold)
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
@@ -164,14 +194,18 @@ private fun DietPlanView(
     onDaySelected: (Int) -> Unit,
     onDeleteClick: () -> Unit
 ) {
-    val dayNames = listOf("Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz")
-    val pagerState = rememberPagerState(initialPage = selectedDayIndex, pageCount = { 7 })
+    val pageCount = if (plan.days.isNotEmpty()) plan.days.size else 1
+    val dayNames = List(pageCount) { index -> "${index + 1}. Gün" }
+    
+    // Ensure selected index is within valid bounds for dynamic lengths
+    val validInitialPage = selectedDayIndex.coerceIn(0, pageCount - 1)
+    val pagerState = rememberPagerState(initialPage = validInitialPage, pageCount = { pageCount })
     val scope = rememberCoroutineScope()
-
     // ViewModel state ile Pager'ı senkronize tut
     LaunchedEffect(selectedDayIndex) {
-        if (pagerState.currentPage != selectedDayIndex) {
-            pagerState.animateScrollToPage(selectedDayIndex)
+        val validIndex = selectedDayIndex.coerceIn(0, pageCount - 1)
+        if (pagerState.currentPage != validIndex) {
+            pagerState.animateScrollToPage(validIndex)
         }
     }
     LaunchedEffect(pagerState.currentPage) {

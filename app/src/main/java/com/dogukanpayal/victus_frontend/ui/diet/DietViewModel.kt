@@ -27,9 +27,7 @@ class DietViewModel : ViewModel() {
 
     private val nutritionRepository = NutritionRepositoryImpl()
 
-    init {
-        loadMockData()
-    }
+
 
     /**
      * Backend'den günlük özet verilerini çek
@@ -40,26 +38,23 @@ class DietViewModel : ViewModel() {
             _uiState.update { it.copy(isLoading = true, error = null) }
             Log.d(TAG, "loadDailySummary: Başlatıldı")
             
-            val result = nutritionRepository.getDailySummary(token)
+            val today = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+            val result = nutritionRepository.getDailySummary(token, today)
             
             result.getOrNull()?.let { summary ->
                 Log.d(TAG, "loadDailySummary: Başarılı")
-                Log.d(TAG, "Summary - Daily Goal: ${summary.dailyGoal}, Consumed: ${summary.caloriesConsumed}")
-                Log.d(TAG, "Macros - Protein: ${summary.macros.proteinConsumed}/${summary.macros.proteinGoal}, " +
-                    "Carbs: ${summary.macros.carbsConsumed}/${summary.macros.carbsGoal}, " +
-                    "Fat: ${summary.macros.fatConsumed}/${summary.macros.fatGoal}")
                 
                 _uiState.update { state ->
                     state.copy(
                         dailyCalorieGoal = summary.dailyGoal,
                         consumedCalories = summary.caloriesConsumed,
                         remainingCalories = summary.caloriesRemaining,
-                        proteinConsumed = summary.macros.proteinConsumed.toFloat(),
-                        proteinGoal = summary.macros.proteinGoal.toFloat(),
-                        carbsConsumed = summary.macros.carbsConsumed.toFloat(),
-                        carbsGoal = summary.macros.carbsGoal.toFloat(),
-                        fatConsumed = summary.macros.fatConsumed.toFloat(),
-                        fatGoal = summary.macros.fatGoal.toFloat(),
+                        proteinConsumed = summary.macros.consumed.protein.toFloat(),
+                        proteinGoal = summary.macros.targets.protein.toFloat(),
+                        carbsConsumed = summary.macros.consumed.carbs.toFloat(),
+                        carbsGoal = summary.macros.targets.carbs.toFloat(),
+                        fatConsumed = summary.macros.consumed.fat.toFloat(),
+                        fatGoal = summary.macros.targets.fat.toFloat(),
                         isLoading = false,
                         error = null
                     )
@@ -68,7 +63,7 @@ class DietViewModel : ViewModel() {
                 loadFoodLog(token)
             } ?: run {
                 val errorMessage = result.exceptionOrNull()?.message ?: "Bilinmeyen bir hata oluştu"
-                Log.e(TAG, "loadDailySummary: Hata - $errorMessage", result.exceptionOrNull())
+                Log.e(TAG, "loadDailySummary: Hata - $errorMessage")
                 
                 _uiState.update { 
                     it.copy(
@@ -76,8 +71,6 @@ class DietViewModel : ViewModel() {
                         error = errorMessage
                     )
                 }
-                // Hata durumunda mock veri yükle (fallback)
-                loadMockData()
             }
         }
     }
@@ -98,94 +91,51 @@ class DietViewModel : ViewModel() {
     }
 
     /**
-     * Kullanıcı AI sonucunu onayladığında çağrılacak:
-     * POST /v1/nutrition/save
+     * Diyet metnini backend'e gönderip parse edilmesini sağlar.
+     * POST /v1/diet/parse-and-save
      */
-    fun addMeal(meal: MealItem) {
-        _uiState.update { state ->
-            val updatedMeals = state.meals + meal
-            recalculateState(state, updatedMeals)
+    fun parseAndSaveDiet(token: String, rawText: String, startDate: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isParsingDiet = true, dietParsingError = null) }
+            
+            val result = nutritionRepository.parseAndSaveDiet(token, rawText, startDate, activate = true)
+            
+            result.onSuccess { response ->
+                if (response.success) {
+                    _uiState.update { it.copy(isParsingDiet = false, dietParsingError = null) }
+                    // Başarılı ise dashboard'u güncelle
+                    loadDailySummary(token)
+                } else {
+                    _uiState.update { 
+                        it.copy(
+                            isParsingDiet = false, 
+                            dietParsingError = response.message ?: "Diyet çözümlenemedi."
+                        ) 
+                    }
+                }
+            }.onFailure { error ->
+                _uiState.update { 
+                    it.copy(
+                        isParsingDiet = false, 
+                        dietParsingError = error.message ?: "Sunucu hatası oluştu."
+                    ) 
+                }
+            }
         }
+    }
+
+    fun clearDietParsingError() {
+        _uiState.update { it.copy(dietParsingError = null) }
     }
 
     /**
-     * Öğün silme (gelecek feature)
+     * Kullanıcı AI sonucunu onayladığında çağrılacak:
+     * POST /v1/nutrition/save
      */
-    fun removeMeal(mealId: String) {
-        _uiState.update { state ->
-            val updatedMeals = state.meals.filter { it.id != mealId }
-            recalculateState(state, updatedMeals)
-        }
+    fun addMeal(mealId: String) {
+        // Persistence handled by backend, just refresh if needed
     }
 
-    private fun recalculateState(state: NutritionUiState, meals: List<MealItem>): NutritionUiState {
-        val consumed = meals.sumOf { it.calories }
-        val protein = meals.map { it.protein }.sum()
-        val carbs = meals.map { it.carbs }.sum()
-        val fat = meals.map { it.fat }.sum()
-
-        return state.copy(
-            meals = meals,
-            consumedCalories = consumed,
-            remainingCalories = (state.dailyCalorieGoal - consumed).coerceAtLeast(0),
-            proteinConsumed = protein,
-            carbsConsumed = carbs,
-            fatConsumed = fat
-        )
-    }
-
-    private fun loadMockData() {
-        val mockMeals = listOf(
-            MealItem(
-                id = "1",
-                name = "Kahvaltı",
-                description = "Yulaf Ezmesi, Yumurta, Meyve",
-                calories = 420,
-                protein = 28f,
-                carbs = 45f,
-                fat = 14f,
-                mealType = MealType.BREAKFAST,
-                portionSize = 1.0f
-            ),
-            MealItem(
-                id = "2",
-                name = "Öğle Yemeği",
-                description = "Izgara Tavuk, Kinoa Salata",
-                calories = 580,
-                protein = 42f,
-                carbs = 55f,
-                fat = 18f,
-                mealType = MealType.LUNCH,
-                portionSize = 1.0f
-            ),
-            MealItem(
-                id = "3",
-                name = "Akşam Yemeği",
-                description = "Somon Füme, Kuşkonmaz",
-                calories = 350,
-                protein = 30f,
-                carbs = 20f,
-                fat = 16f,
-                mealType = MealType.DINNER,
-                portionSize = 1.0f
-            ),
-            MealItem(
-                id = "4",
-                name = "Atıştırmalık",
-                description = "Çiğ Badem, Yoğurt",
-                calories = 100,
-                protein = 8f,
-                carbs = 12f,
-                fat = 4f,
-                mealType = MealType.SNACK,
-                portionSize = 1.0f
-            )
-        )
-
-        _uiState.update { state ->
-            recalculateState(state, mockMeals)
-        }
-    }
 }
 
 

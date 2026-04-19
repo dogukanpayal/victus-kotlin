@@ -41,6 +41,24 @@ class DietPlanViewModel(
         return LocalDate.now().dayOfWeek.value - 1
     }
 
+    fun loadRemotePlan(token: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isUploading = true)
+            val result = repository.fetchActivePlan(token)
+            result.onSuccess { remotePlan ->
+                _uiState.value = _uiState.value.copy(
+                    plan = remotePlan,
+                    isUploading = false
+                )
+            }.onFailure {
+                _uiState.value = _uiState.value.copy(
+                    isUploading = false,
+                    uploadError = "Plan yüklenemedi: ${it.message}"
+                )
+            }
+        }
+    }
+
     private fun loadSavedPlan() {
         viewModelScope.launch {
             val savedPlan = repository.getSavedPlan()
@@ -66,12 +84,9 @@ class DietPlanViewModel(
 
             val result = repository.analyzeDietPlan(context, uri, mimeType, token)
 
-            result.onSuccess { newPlan ->
-                _uiState.value = _uiState.value.copy(
-                    isUploading = false,
-                    plan = newPlan,
-                    selectedDayIndex = getTodayIndex() // Yeni plan yüklendiğinde bugüne odaklan
-                )
+            result.onSuccess {
+                // Yükleme başarılı, şimdi güncel planı çek
+                loadRemotePlan(token)
             }.onFailure { exception ->
                 _uiState.value = _uiState.value.copy(
                     isUploading = false,

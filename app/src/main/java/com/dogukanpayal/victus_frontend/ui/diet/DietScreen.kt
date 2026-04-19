@@ -14,6 +14,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Info
+
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
@@ -65,6 +67,7 @@ fun DietScreen(
     LaunchedEffect(token) {
         if (token.isNotEmpty()) {
             viewModel.loadDailySummary(token)
+            dietPlanViewModel.loadRemotePlan(token)
         }
     }
 
@@ -309,7 +312,11 @@ fun DietScreen(
         DietPlanSection(
             viewModel = dietPlanViewModel,
             token = token,
-            meals = uiState.meals
+            meals = uiState.meals,
+            onParseDiet = { rawText ->
+                val today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
+                viewModel.parseAndSaveDiet(token, rawText, today)
+            }
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -360,6 +367,69 @@ fun DietScreen(
         }
 
         Spacer(modifier = Modifier.height(100.dp))
+        }
+
+        // ═══════════════════════════════════════════
+        // Loading Overlay for Parsing
+        // ═══════════════════════════════════════════
+        if (uiState.isParsingDiet) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.4f))
+                    .clickable(enabled = false) {},
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CircularProgressIndicator(color = primaryGreen)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Diyetin Çözümleniyor...",
+                            fontWeight = FontWeight.Bold,
+                            color = textDark
+                        )
+                        Text(
+                            text = "Bu işlem birkaç saniye sürebilir.",
+                            fontSize = 12.sp,
+                            color = textGray
+                        )
+                    }
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════
+        // Error Dialog
+        // ═══════════════════════════════════════════
+        uiState.dietParsingError?.let { error ->
+            AlertDialog(
+                onDismissRequest = { viewModel.clearDietParsingError() },
+                title = { Text("Diyet Çözümlenemedi", fontWeight = FontWeight.Bold) },
+                text = { Text(error) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.clearDietParsingError() }) {
+                        Text("Tamam", color = primaryGreen, fontWeight = FontWeight.Bold)
+                    }
+                },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = Color.Red,
+                        modifier = Modifier.size(32.dp)
+                    )
+                },
+                shape = RoundedCornerShape(24.dp),
+                containerColor = Color.White
+            )
         }
     }
 }

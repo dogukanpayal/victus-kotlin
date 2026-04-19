@@ -21,9 +21,9 @@ interface NutritionRepository {
     suspend fun analyzeImage(token: String, imageUri: Uri, context: Context): Result<NutritionAnalysisResponse>
     suspend fun analyzeText(token: String, query: String, portion: Double): Result<NutritionAnalysisResponse>
     suspend fun saveMeal(token: String, request: SaveNutritionRequest): Result<Unit>
-    suspend fun getSummary(token: String): Result<NutritionSummaryResponse>
-    suspend fun getDailySummary(token: String): Result<DailySummaryResponse>
+    suspend fun getDailySummary(token: String, date: String? = null): Result<DailySummaryResponse>
     suspend fun getMealHistory(token: String, date: String): Result<List<FoodLogItem>>
+    suspend fun parseAndSaveDiet(token: String, rawText: String, startDate: String, activate: Boolean): Result<com.dogukanpayal.victus_frontend.data.model.ParseDietResponse>
 }
 
 class NutritionRepositoryImpl(
@@ -89,33 +89,18 @@ class NutritionRepositoryImpl(
         }
     }
 
-    override suspend fun getSummary(token: String): Result<NutritionSummaryResponse> {
+    override suspend fun getDailySummary(token: String, date: String?): Result<DailySummaryResponse> {
         return try {
-            val response = apiService.getSummary("Bearer $token")
-            if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else if (response.code() == 401) {
-                Result.failure(Exception("HTTP 401 Unauthorized"))
-            } else {
-                Result.failure(Exception("Özet alınamadı: ${response.message()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun getDailySummary(token: String): Result<DailySummaryResponse> {
-        return try {
-            val response = apiService.getDailySummary("Bearer $token")
+            val response = apiService.getDailySummary("Bearer $token", date)
             
             if (response.isSuccessful && response.body() != null) {
                 val summary = response.body()!!
                 Log.d(TAG, "getDailySummary: Başarılı")
                 Log.d(TAG, "Response Body: $summary")
                 Log.d(TAG, "Daily Goal: ${summary.dailyGoal}, Consumed: ${summary.caloriesConsumed}, Remaining: ${summary.caloriesRemaining}")
-                Log.d(TAG, "Macros - Protein: ${summary.macros.proteinConsumed}/${summary.macros.proteinGoal}, " +
-                    "Carbs: ${summary.macros.carbsConsumed}/${summary.macros.carbsGoal}, " +
-                    "Fat: ${summary.macros.fatConsumed}/${summary.macros.fatGoal}")
+                Log.d(TAG, "Targets - Protein: ${summary.macros.targets.protein}, " +
+                    "Carbs: ${summary.macros.targets.carbs}, " +
+                    "Fat: ${summary.macros.targets.fat}")
                 Result.success(summary)
             } else if (response.code() == 401) {
                 Log.e(TAG, "getDailySummary: HTTP 401 Unauthorized")
@@ -151,6 +136,27 @@ class NutritionRepositoryImpl(
                 Result.failure(Exception("HTTP 401 Unauthorized"))
             } else {
                 Result.failure(Exception("Öğün geçmişi alınamadı: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun parseAndSaveDiet(
+        token: String,
+        rawText: String,
+        startDate: String,
+        activate: Boolean
+    ): Result<com.dogukanpayal.victus_frontend.data.model.ParseDietResponse> {
+        return try {
+            val request = com.dogukanpayal.victus_frontend.data.model.ParseDietRequest(rawText, startDate, activate)
+            val response = apiService.parseAndSaveDiet("Bearer $token", request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else if (response.code() == 401) {
+                Result.failure(Exception("HTTP 401 Unauthorized"))
+            } else {
+                Result.failure(Exception("Diyet planı işlenemedi: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -15,7 +15,8 @@ import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,7 +27,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel) {
+fun HomeScreen(viewModel: HomeViewModel, token: String = "") {
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Token geldiğinde veriyi yükle
+    LaunchedEffect(token) {
+        if (token.isNotEmpty()) {
+            viewModel.loadDailySummary(token)
+        }
+    }
+
     val primaryGreen = Color(0xFF22C55E)
     val lightGreenBg = Color(0xFFF0FDF4)
     val surfaceWhite = Color.White
@@ -55,11 +65,42 @@ fun HomeScreen(viewModel: HomeViewModel) {
             )
             TextButton(onClick = { /* Navigate to details */ }) {
                 Text(
-                    text = "Detayları Gör",
+                    text = if (uiState.dailyCalorieGoal == 0) "Hedef Belirle" else "Detayları Gör",
                     color = primaryGreen,
                     fontWeight = FontWeight.Medium,
                     fontSize = 14.sp
                 )
+            }
+        }
+
+        if (uiState.dailyCalorieGoal == 0) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2)),
+                shape = RoundedCornerShape(24.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = Color(0xFFDC2626)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Aktif Diyet Planı Yok",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFDC2626)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Bugün için bir hedefin bulunmuyor. Diyet sayfasından yeni bir plan oluşturarak takip edebilirsin!",
+                        fontSize = 14.sp,
+                        color = Color(0xFF991B1B)
+                    )
+                }
             }
         }
 
@@ -82,8 +123,8 @@ fun HomeScreen(viewModel: HomeViewModel) {
             SummaryCard(
                 modifier = Modifier.weight(1f),
                 title = "KALORİ",
-                value = "1,200",
-                trend = "+5%",
+                value = uiState.consumedCalories.toString(),
+                trend = if (uiState.dailyCalorieGoal > 0) "%${(uiState.consumedCalories * 100 / uiState.dailyCalorieGoal)} hedef" else "Hedef yok",
                 icon = Icons.Default.Star, // Fire placeholder
                 iconColor = Color(0xFFF97316),
                 primaryGreen = primaryGreen

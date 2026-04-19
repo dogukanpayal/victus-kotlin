@@ -10,6 +10,9 @@ import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.UUID
 
 class DietPlanRepositoryImpl(private val context: Context) : DietPlanRepository {
@@ -25,14 +28,74 @@ class DietPlanRepositoryImpl(private val context: Context) : DietPlanRepository 
         token: String
     ): Result<DietPlan> = withContext(Dispatchers.IO) {
         try {
-            // İleride buraya ağ isteği (POST /v1/diet-plan/analyze) gelecek
-            
-            // Simüle edilmiş bekleme süresi (Yapay zeka analiz ediyormuş gibi)
-            delay(2000)
+            // 1. Uri'den ByteArray'e dönüştür
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val fileBytes = inputStream?.use { it.readBytes() } ?: throw Exception("Dosya okunamadı")
 
-            val mockPlan = generateMockPlan()
-            savePlan(mockPlan) // Otomatik olarak yerel state'e kaydet
-            Result.success(mockPlan)
+            // 2. MultipartBody.Part hazırla
+            val requestFile = fileBytes.toRequestBody(mimeType.toMediaTypeOrNull())
+            val filePart = MultipartBody.Part.createFormData("file", "diet_plan", requestFile)
+            
+            val startDatePart = java.time.LocalDate.now().toString().toRequestBody("text/plain".toMediaTypeOrNull())
+            val activatePart = "true".toRequestBody("text/plain".toMediaTypeOrNull())
+
+            // 3. API çağrısı yap
+            val service = com.dogukanpayal.victus_frontend.data.remote.RetrofitClient.apiService
+            val response = service.uploadDietPlan("Bearer $token", filePart, startDatePart, activatePart)
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                // Başarılı ise backend zaten planı kaydetti ve aktif etti.
+                Result.success(generateEmptySuccessPlan())
+            } else {
+                val errorMsg = response.body()?.message ?: "Sunucu hatası: ${response.code()}"
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun fetchActivePlan(token: String): Result<DietPlan?> = withContext(Dispatchers.IO) {
+        try {
+            val service = com.dogukanpayal.victus_frontend.data.remote.RetrofitClient.apiService
+            val response = service.getActivePlan("Bearer $token")
+
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                
+                // Backend'den gelen düz listeyi günlere göre grupla
+                val mealsByDay = body.items.groupBy { it.dayNumber }
+                
+                val days = mealsByDay.keys.sorted().map { dayNum ->
+                    val meals = mealsByDay[dayNum]!!.map { item ->
+                        com.dogukanpayal.victus_frontend.data.model.DietMeal(
+                            name = item.foodName,
+                            time = item.mealType,
+                            description = "Porsiyon bilgisi: ${item.mealType}",
+                            calories = item.calories.toInt()
+                        )
+                    }
+                    
+                    com.dogukanpayal.victus_frontend.data.model.DailyDietPlan(
+                        dayIndex = dayNum - 1,
+                        dayName = "Gün $dayNum",
+                        meals = meals
+                    )
+                }
+
+                val dietPlan = DietPlan(
+                    id = body.plan.id,
+                    uploadedAt = System.currentTimeMillis(), // Şimdilik yerel zaman
+                    sourceFileName = body.plan.title,
+                    days = days
+                )
+                
+                Result.success(dietPlan)
+            } else if (response.code() == 404) {
+                Result.success(null)
+            } else {
+                Result.failure(Exception("Aktif plan alınamadı: ${response.code()}"))
+            }
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -104,6 +167,14 @@ class DietPlanRepositoryImpl(private val context: Context) : DietPlanRepository 
             uploadedAt = System.currentTimeMillis(),
             sourceFileName = "Örnek Diyet Listesi.pdf",
             days = days
+        )
+    }
+    private fun generateEmptySuccessPlan(): DietPlan {
+        return DietPlan(
+            id = UUID.randomUUID().toString(),
+            uploadedAt = System.currentTimeMillis(),
+            sourceFileName = "Analiz Başarılı",
+            days = emptyList()
         )
     }
 

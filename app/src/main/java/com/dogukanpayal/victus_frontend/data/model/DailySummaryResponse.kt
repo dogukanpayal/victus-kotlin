@@ -1,14 +1,13 @@
 package com.dogukanpayal.victus_frontend.data.model
 
 import com.squareup.moshi.Json
+import com.squareup.moshi.JsonClass
 
 /**
  * Daily nutrition summary from backend
  * Maps to /v1/nutrition/summary endpoint response
- * 
- * @Json annotations must match backend field names exactly
- * If mapping fails, check Logcat from NutritionRepository for actual response structure
  */
+@JsonClass(generateAdapter = true)
 data class DailySummaryResponse(
     @Json(name = "daily_goal")
     val dailyGoal: Int,
@@ -20,29 +19,36 @@ data class DailySummaryResponse(
     val caloriesRemaining: Int,
     
     @Json(name = "macros")
-    val macros: MacrosSummary
+    val macros: MacrosBreakdown,
+
+    @Json(name = "date")
+    val date: String
 )
 
-/**
- * Macro nutrients summary
- * Maps to backend macros object with protein, carbs, fat fields
- * Goal values are currently mocked (150g protein, 250g carbs, 70g fat)
- * Once backend provides dynamic goals, update @Json names and remove hardcoded values
- */
-data class MacrosSummary(
+@JsonClass(generateAdapter = true)
+data class MacrosBreakdown(
+    @Json(name = "targets")
+    val targets: MacroValues,
+    
+    @Json(name = "consumed")
+    val consumed: MacroValues,
+    
+    @Json(name = "remaining")
+    val remaining: MacroValues
+)
+
+@JsonClass(generateAdapter = true)
+data class MacroValues(
     @Json(name = "protein")
-    val proteinConsumed: Double = 0.0,
+    val protein: Double = 0.0,
 
     @Json(name = "carbs")
-    val carbsConsumed: Double = 0.0,
+    val carbs: Double = 0.0,
 
     @Json(name = "fat")
-    val fatConsumed: Double = 0.0,
+    val fat: Double = 0.0,
 
-    // Temporary hardcoded goals - backend doesn't send these yet
-    // TODO: Update @Json annotations once backend provides dynamic goal values
-    val proteinGoal: Double = 150.0,
-    val carbsGoal: Double = 250.0,
-    val fatGoal: Double = 70.0
+    @Json(name = "calories")
+    val calories: Int = 0
 )
 
