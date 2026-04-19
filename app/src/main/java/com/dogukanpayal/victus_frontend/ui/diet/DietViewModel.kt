@@ -143,13 +143,24 @@ class DietViewModel : ViewModel() {
     }
 
     /**
-     * Kullanıcı AI sonucunu onayladığında çağrılacak:
-     * POST /v1/nutrition/save
+     * Kullanıcı bir yemeği silmek istediğinde çağrılır:
+     * DELETE /v1/nutrition/meal/:id
      */
-    fun addMeal(mealId: String) {
-        // Persistence handled by backend, just refresh if needed
+    fun deleteMealLog(token: String, mealId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            val result = nutritionRepository.deleteMeal(token, mealId)
+            
+            result.onSuccess {
+                Log.d(TAG, "deleteMealLog: Başarılı")
+                // Başarılı ise verileri yeniden yükle
+                loadDailySummary(token)
+            }.onFailure { error ->
+                Log.e(TAG, "deleteMealLog: Hata - ${error.message}")
+                _uiState.update { it.copy(isLoading = false, error = error.message) }
+            }
+        }
     }
-
 }
 
 

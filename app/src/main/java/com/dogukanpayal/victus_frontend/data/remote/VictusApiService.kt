@@ -61,6 +61,12 @@ interface VictusApiService {
         @Query("date") date: String
     ): Response<MealHistoryResponse>
 
+    @DELETE("v1/nutrition/meal/{id}")
+    suspend fun deleteMeal(
+        @Header("Authorization") token: String,
+        @Path("id") id: String
+    ): Response<Unit>
+
     @POST("v1/nutrition/analyze-compliance")
     suspend fun analyzeDietCompliance(
         @Header("Authorization") token: String,

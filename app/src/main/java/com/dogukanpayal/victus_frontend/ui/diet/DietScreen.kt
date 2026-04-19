@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.dogukanpayal.victus_frontend.ui.diet
 
 import androidx.compose.animation.core.animateFloatAsState
@@ -11,6 +13,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.AddCircle
@@ -21,6 +25,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -62,6 +67,7 @@ fun DietScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val pullToRefreshState = rememberPullToRefreshState()
+    var mealToDelete by remember { mutableStateOf<FoodLogItem?>(null) }
 
     // Token geldiğinde veriyi yükle
     LaunchedEffect(token) {
@@ -363,7 +369,10 @@ fun DietScreen(
                 }
             }
         } else {
-            FoodLogTimeline(items = uiState.foodLog)
+            FoodLogTimeline(
+                items = uiState.foodLog,
+                onDelete = { mealToDelete = it }
+            )
         }
 
         Spacer(modifier = Modifier.height(100.dp))
@@ -426,6 +435,36 @@ fun DietScreen(
                         tint = Color.Red,
                         modifier = Modifier.size(32.dp)
                     )
+                },
+                shape = RoundedCornerShape(24.dp),
+                containerColor = Color.White
+            )
+        }
+
+        // ═══════════════════════════════════════════
+        // Delete Confirmation Dialog
+        // ═══════════════════════════════════════════
+        mealToDelete?.let { meal ->
+            AlertDialog(
+                onDismissRequest = { mealToDelete = null },
+                title = { Text("Öğünü Sil", fontWeight = FontWeight.Bold) },
+                text = { Text("'${meal.foodName}' günlüğünüzden silinecek. Emin misiniz?") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            if (token.isNotEmpty()) {
+                                viewModel.deleteMealLog(token, meal.id)
+                            }
+                            mealToDelete = null
+                        }
+                    ) {
+                        Text("Sil", color = Color.Red, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { mealToDelete = null }) {
+                        Text("Vazgeç", color = textGray)
+                    }
                 },
                 shape = RoundedCornerShape(24.dp),
                 containerColor = Color.White
@@ -643,7 +682,7 @@ private fun formatTimeLabel(isoTimestamp: String): String {
 }
 
 @Composable
-fun FoodLogTimeline(items: List<FoodLogItem>) {
+fun FoodLogTimeline(items: List<FoodLogItem>, onDelete: (FoodLogItem) -> Unit) {
     // Kronolojik sıralama (en eski önce)
     val sorted = remember(items) { items.sortedBy { it.createdAt } }
 
@@ -651,14 +690,15 @@ fun FoodLogTimeline(items: List<FoodLogItem>) {
         sorted.forEachIndexed { index, item ->
             FoodLogCard(
                 item = item,
-                isLast = index == sorted.lastIndex
+                isLast = index == sorted.lastIndex,
+                onDelete = { onDelete(item) }
             )
         }
     }
 }
 
 @Composable
-private fun FoodLogCard(item: FoodLogItem, isLast: Boolean) {
+private fun FoodLogCard(item: FoodLogItem, isLast: Boolean, onDelete: () -> Unit) {
     val timeLabel = remember(item.createdAt) { formatTimeLabel(item.createdAt) }
     val context = LocalPlatformContext.current
 
@@ -711,12 +751,12 @@ private fun FoodLogCard(item: FoodLogItem, isLast: Boolean) {
                     .fillMaxWidth()
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // Yemek fotoğrafı / placeholder
                 Box(
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(64.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .background(Color(0xFFF1F5F9)),
                     contentAlignment = Alignment.Center
@@ -738,47 +778,48 @@ private fun FoodLogCard(item: FoodLogItem, isLast: Boolean) {
                             imageVector = Icons.Default.Restaurant,
                             contentDescription = null,
                             tint = Color(0xFFCBD5E1),
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 }
 
-                // Yemek bilgileri
+                // Yemek bilgileri (Orta kısım - Geniş)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = item.foodName,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF1E293B),
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Spacer(modifier = Modifier.height(6.dp))
-                    // Makro chip'leri
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        MacroChip(
-                            label = "P",
-                            value = String.format(Locale.ROOT, "%.0fg", item.protein),
-                            bgColor = Color(0xFFDCFCE7),
-                            textColor = Color(0xFF16A34A)
-                        )
-                        MacroChip(
-                            label = "K",
-                            value = String.format(Locale.ROOT, "%.0fg", item.carbs),
-                            bgColor = Color(0xFFDBEAFE),
-                            textColor = Color(0xFF2563EB)
-                        )
-                        MacroChip(
-                            label = "Y",
-                            value = String.format(Locale.ROOT, "%.0fg", item.fat),
-                            bgColor = Color(0xFFFFEDD5),
-                            textColor = Color(0xFFEA580C)
-                        )
+                        MacroChip(label = "P", value = String.format(Locale.ROOT, "%.0fg", item.protein), bgColor = Color(0xFFDCFCE7), textColor = Color(0xFF16A34A))
+                        MacroChip(label = "K", value = String.format(Locale.ROOT, "%.0fg", item.carbs), bgColor = Color(0xFFDBEAFE), textColor = Color(0xFF2563EB))
+                        MacroChip(label = "Y", value = String.format(Locale.ROOT, "%.0fg", item.fat), bgColor = Color(0xFFFFEDD5), textColor = Color(0xFFEA580C))
                     }
                 }
 
-                // Kalori
-                Column(horizontalAlignment = Alignment.End) {
+                // Sağ sütun (Silme Butonu Üstte, Kalori Altta)
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier
+                            .offset(x = 8.dp, y = (-12).dp) // Köşeye tam oturması için
+                            .size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Sil",
+                            tint = Color(0xFFCBD5E1),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    
                     Text(
                         text = "${item.calories}",
                         fontSize = 20.sp,
@@ -808,7 +849,9 @@ private fun MacroChip(label: String, value: String, bgColor: Color, textColor: C
             text = "$label $value",
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
-            color = textColor
+            color = textColor,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }

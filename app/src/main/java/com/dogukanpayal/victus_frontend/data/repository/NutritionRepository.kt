@@ -24,6 +24,7 @@ interface NutritionRepository {
     suspend fun getDailySummary(token: String, date: String? = null): Result<DailySummaryResponse>
     suspend fun getMealHistory(token: String, date: String): Result<List<FoodLogItem>>
     suspend fun parseAndSaveDiet(token: String, rawText: String, startDate: String, activate: Boolean): Result<com.dogukanpayal.victus_frontend.data.model.ParseDietResponse>
+    suspend fun deleteMeal(token: String, id: String): Result<Unit>
 }
 
 class NutritionRepositoryImpl(
@@ -136,6 +137,21 @@ class NutritionRepositoryImpl(
                 Result.failure(Exception("HTTP 401 Unauthorized"))
             } else {
                 Result.failure(Exception("Öğün geçmişi alınamadı: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteMeal(token: String, id: String): Result<Unit> {
+        return try {
+            val response = apiService.deleteMeal("Bearer $token", id)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else if (response.code() == 401) {
+                Result.failure(Exception("HTTP 401 Unauthorized"))
+            } else {
+                Result.failure(Exception("Öğün silinemedi: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
