@@ -45,6 +45,8 @@ import com.dogukanpayal.victus_frontend.ui.scanner.ScannerViewModel
 import com.dogukanpayal.victus_frontend.ui.components.MainBottomNavigation
 import com.dogukanpayal.victus_frontend.ui.components.MainDrawerContent
 import com.dogukanpayal.victus_frontend.data.repository.ProfileRepositoryImpl
+import com.dogukanpayal.victus_frontend.data.repository.WorkoutPresetRepository
+import com.dogukanpayal.victus_frontend.data.repository.DailyWorkoutRepository
 import com.dogukanpayal.victus_frontend.data.storage.SessionManager
 
 enum class Screen { Login, Register, SetupProfile, Profile, EditProfile, Home, Workout, Exercise, Diet, Scanner }
@@ -197,7 +199,9 @@ class MainActivity : ComponentActivity() {
                             val profileViewModel = remember { ProfileViewModel() }
                             val editProfileViewModel = remember { EditProfileViewModel(context = context) }
                             val homeViewModel = remember { HomeViewModel() }
-                            val workoutViewModel = remember { WorkoutViewModel() }
+                            val workoutPresetRepository = remember { WorkoutPresetRepository(context) }
+                            val dailyWorkoutRepository = remember { DailyWorkoutRepository(context) }
+                            val workoutViewModel = remember { WorkoutViewModel(workoutPresetRepository, dailyWorkoutRepository) }
                             val exerciseViewModel = remember { ExerciseViewModel() }
                             val dietViewModel = remember { DietViewModel() }
                             val dietPlanViewModel = remember { DietPlanViewModel(context = context) }
@@ -272,7 +276,10 @@ class MainActivity : ComponentActivity() {
                                                 viewModel = homeViewModel,
                                                 token = setupToken.value
                                             )
-                                            Screen.Workout -> WorkoutScreen(viewModel = workoutViewModel)
+                                            Screen.Workout -> WorkoutScreen(
+                                                viewModel = workoutViewModel,
+                                                token = setupToken.value
+                                            )
                                             Screen.Exercise -> ExerciseScreen(viewModel = exerciseViewModel)
                                             Screen.Diet -> DietScreen(
                                                 viewModel = dietViewModel,

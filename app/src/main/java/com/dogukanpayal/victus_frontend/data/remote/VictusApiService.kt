@@ -89,4 +89,26 @@ interface VictusApiService {
         @Part("start_date") startDate: RequestBody,
         @Part("activate") activate: RequestBody
     ): Response<ParseDietResponse>
+
+    @GET("v1/workout/exercises")
+    suspend fun getExercises(
+        @Header("Authorization") token: String
+    ): Response<List<Exercise>>
+
+    @POST("v1/workout/log")
+    suspend fun logWorkout(
+        @Header("Authorization") token: String,
+        @Body request: WorkoutLogRequest
+    ): Response<WorkoutLogResponse>
+
+    @DELETE("v1/workout/log/{id}")
+    suspend fun deleteWorkoutLog(
+        @Header("Authorization") token: String,
+        @Path("id") id: String
+    ): Response<Unit>
+
+    @DELETE("v1/workout/logs/reset")
+    suspend fun resetWorkoutLogs(
+        @Header("Authorization") token: String
+    ): Response<Unit>
 }

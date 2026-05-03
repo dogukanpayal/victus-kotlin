@@ -18,6 +18,9 @@ data class DailySummaryResponse(
     @Json(name = "calories_remaining")
     val caloriesRemaining: Int,
     
+    @Json(name = "calories_burned")
+    val caloriesBurned: Double? = 0.0,
+    
     @Json(name = "macros")
     val macros: MacrosBreakdown,
 
