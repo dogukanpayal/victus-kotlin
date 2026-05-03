@@ -160,7 +160,18 @@ class WorkoutViewModel(
                         ) 
                     }
                 } else {
-                    _uiState.update { it.copy(error = "Antrenman kaydedilemedi: ${response.code()}", isLoading = false) }
+                    val errorMsg = try {
+                        val errorBody = response.errorBody()?.string()
+                        if (errorBody != null) {
+                            val json = org.json.JSONObject(errorBody)
+                            json.optString("error", "Antrenman kaydedilemedi: ${response.code()}")
+                        } else {
+                            "Antrenman kaydedilemedi: ${response.code()}"
+                        }
+                    } catch (e: Exception) {
+                        "Antrenman kaydedilemedi: ${response.code()}"
+                    }
+                    _uiState.update { it.copy(error = errorMsg, isLoading = false) }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message ?: "Bağlantı hatası", isLoading = false) }
