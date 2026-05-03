@@ -104,7 +104,7 @@ class MainActivity : ComponentActivity() {
                 val screenTitle = when (currentScreen.value) {
                     Screen.Home -> "Ana Sayfa"
                     Screen.Workout -> "Antrenman"
-                    Screen.Exercise -> "Egzersiz"
+                    Screen.Exercise -> "Analiz"
                     Screen.Diet -> "Diyet"
                     Screen.Scanner -> "Tarayıcı"
                     Screen.Profile -> "Profil"

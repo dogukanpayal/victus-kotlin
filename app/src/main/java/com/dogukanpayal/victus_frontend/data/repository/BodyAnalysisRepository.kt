@@ -14,6 +14,8 @@ import java.io.InputStream
 interface BodyAnalysisRepository {
     suspend fun analyzeBody(token: String, imageUri: Uri, context: Context, weight: Double): Result<BodyCompositionReport>
     suspend fun getMetricsHistory(token: String): Result<List<HealthMetricsData>>
+    suspend fun deleteMetrics(token: String, id: String): Result<Unit>
+    suspend fun analyzeProgress(token: String, request: ProgressAnalysisRequest): Result<ProgressAnalysisResponse>
 }
 
 class BodyAnalysisRepositoryImpl(
@@ -43,6 +45,32 @@ class BodyAnalysisRepositoryImpl(
                 Result.success(response.body()!!)
             } else {
                 Result.failure(Exception("Geçmiş yüklenemedi: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun deleteMetrics(token: String, id: String): Result<Unit> {
+        return try {
+            val response = apiService.deleteMetrics("Bearer $token", id)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception("Silme başarısız: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun analyzeProgress(token: String, request: ProgressAnalysisRequest): Result<ProgressAnalysisResponse> {
+        return try {
+            val response = apiService.analyzeProgress("Bearer $token", request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Gelişim analizi başarısız: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -95,7 +95,7 @@ fun MainBottomNavigation(
                 }
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     NavigationItem(
-                        label = "Egzersiz",
+                        label = "Analiz",
                         icon = Icons.Default.AccessibilityNew,
                         isSelected = currentScreen == Screen.Exercise,
                         onClick = { onNavigate(Screen.Exercise) },

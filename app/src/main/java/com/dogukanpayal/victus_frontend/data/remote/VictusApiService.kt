@@ -122,4 +122,16 @@ interface VictusApiService {
     suspend fun getMetricsHistory(
         @Header("Authorization") token: String
     ): Response<List<HealthMetricsData>>
+
+    @DELETE("v1/user/metrics/{id}")
+    suspend fun deleteMetrics(
+        @Header("Authorization") token: String,
+        @Path("id") id: String
+    ): Response<Unit>
+
+    @POST("v1/user/metrics/analyze-progress")
+    suspend fun analyzeProgress(
+        @Header("Authorization") token: String,
+        @Body request: ProgressAnalysisRequest
+    ): Response<ProgressAnalysisResponse>
 }

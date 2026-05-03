@@ -34,3 +34,24 @@ data class AnalyzeBodyRequest(
     @Json(name = "base64_image") val base64Image: String,
     val weight: Double
 )
+
+@JsonClass(generateAdapter = true)
+data class ProgressMetrics(
+    val weight: Double,
+    @Json(name = "fat_percentage") val fatPercentage: Double,
+    @Json(name = "muscle_percentage") val musclePercentage: Double,
+    val bmi: Double,
+    @Json(name = "posture_notes") val postureNotes: String
+)
+
+@JsonClass(generateAdapter = true)
+data class ProgressAnalysisRequest(
+    @Json(name = "before_metrics") val beforeMetrics: ProgressMetrics,
+    @Json(name = "after_metrics") val afterMetrics: ProgressMetrics,
+    @Json(name = "days_difference") val daysDifference: Int
+)
+
+@JsonClass(generateAdapter = true)
+data class ProgressAnalysisResponse(
+    val summary: String
+)

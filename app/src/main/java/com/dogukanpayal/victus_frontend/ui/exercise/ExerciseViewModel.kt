@@ -37,6 +37,19 @@ class ExerciseViewModel(
     private val _pendingCameraUri = MutableStateFlow<Uri?>(null)
     val pendingCameraUri: StateFlow<Uri?> = _pendingCameraUri.asStateFlow()
 
+    // Comparison States
+    private val _isComparisonOpen = MutableStateFlow(false)
+    val isComparisonOpen: StateFlow<Boolean> = _isComparisonOpen.asStateFlow()
+
+    private val _selectedBefore = MutableStateFlow<HealthMetricsData?>(null)
+    val selectedBefore: StateFlow<HealthMetricsData?> = _selectedBefore.asStateFlow()
+
+    private val _selectedAfter = MutableStateFlow<HealthMetricsData?>(null)
+    val selectedAfter: StateFlow<HealthMetricsData?> = _selectedAfter.asStateFlow()
+
+    private val _comparisonResult = MutableStateFlow<com.dogukanpayal.victus_frontend.data.model.ComparisonResult?>(null)
+    val comparisonResult: StateFlow<com.dogukanpayal.victus_frontend.data.model.ComparisonResult?> = _comparisonResult.asStateFlow()
+
     fun loadMetricsHistory(token: String) {
         if (token.isEmpty()) return
         viewModelScope.launch {
@@ -56,7 +69,6 @@ class ExerciseViewModel(
             _isAnalyzing.value = true
             _error.value = null
 
-            // 1. Get current weight from profile
             val profileResult = profileRepo.getProfile(token)
             val currentWeight = profileResult.getOrNull()?.weightKg ?: 0.0
 
@@ -66,17 +78,98 @@ class ExerciseViewModel(
                 return@launch
             }
 
-            // 2. Perform AI analysis
             bodyRepo.analyzeBody(token, uri, context, currentWeight)
                 .onSuccess { report ->
                     _analysisResult.value = report
                     _isAnalyzing.value = false
-                    loadMetricsHistory(token) // Refresh history
+                    loadMetricsHistory(token)
                 }
                 .onFailure { exception ->
                     _error.value = exception.message ?: "Analiz sırasında bir hata oluştu"
                     _isAnalyzing.value = false
                 }
+        }
+    }
+
+    private val _isComparisonLoading = MutableStateFlow(false)
+    val isComparisonLoading: StateFlow<Boolean> = _isComparisonLoading.asStateFlow()
+
+    fun openComparison() {
+        _isComparisonOpen.value = true
+        _comparisonResult.value = null
+        _selectedBefore.value = null
+        _selectedAfter.value = null
+    }
+
+    fun closeComparison() {
+        _isComparisonOpen.value = false
+    }
+
+    fun selectBefore(metric: HealthMetricsData) {
+        _selectedBefore.value = metric
+    }
+
+    fun selectAfter(metric: HealthMetricsData) {
+        _selectedAfter.value = metric
+    }
+
+    fun performComparison(token: String) {
+        val before = _selectedBefore.value
+        val after = _selectedAfter.value
+        
+        if (before != null && after != null && token.isNotEmpty()) {
+            val fatDelta = after.fatPercentage - before.fatPercentage
+            val muscleDelta = after.musclePercentage - before.musclePercentage
+            val weightDelta = after.weight - before.weight
+            val bmiDelta = after.bmi - before.bmi
+            
+            // Calculate days difference
+            val format = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+            val beforeDate = try { format.parse(before.createdAt.take(10)) } catch (e: Exception) { null }
+            val afterDate = try { format.parse(after.createdAt.take(10)) } catch (e: Exception) { null }
+            
+            val daysDiff = if (beforeDate != null && afterDate != null) {
+                val diff = afterDate.time - beforeDate.time
+                (diff / (1000 * 60 * 60 * 24)).toInt()
+            } else 0
+
+            _isComparisonLoading.value = true
+            
+            viewModelScope.launch {
+                val request = com.dogukanpayal.victus_frontend.data.model.ProgressAnalysisRequest(
+                    beforeMetrics = com.dogukanpayal.victus_frontend.data.model.ProgressMetrics(
+                        weight = before.weight,
+                        fatPercentage = before.fatPercentage,
+                        musclePercentage = before.musclePercentage,
+                        bmi = before.bmi,
+                        postureNotes = before.postureNotes
+                    ),
+                    afterMetrics = com.dogukanpayal.victus_frontend.data.model.ProgressMetrics(
+                        weight = after.weight,
+                        fatPercentage = after.fatPercentage,
+                        musclePercentage = after.musclePercentage,
+                        bmi = after.bmi,
+                        postureNotes = after.postureNotes
+                    ),
+                    daysDifference = daysDiff
+                )
+
+                val summary = bodyRepo.analyzeProgress(token, request).getOrNull()?.summary 
+                    ?: "$daysDiff gün içerisinde yaklaşık ${String.format("%.1f", Math.abs(weightDelta))} kg ${if (weightDelta < 0) "verdiniz" else "aldınız"}."
+
+                _comparisonResult.value = com.dogukanpayal.victus_frontend.data.model.ComparisonResult(
+                    before = before,
+                    after = after,
+                    fatDelta = fatDelta,
+                    muscleDelta = muscleDelta,
+                    weightDelta = weightDelta,
+                    bmiDelta = bmiDelta,
+                    daysDifference = daysDiff,
+                    summaryText = summary
+                )
+                
+                _isComparisonLoading.value = false
+            }
         }
     }
 
@@ -117,5 +210,14 @@ class ExerciseViewModel(
 
     fun dismissResult() {
         _analysisResult.value = null
+    }
+
+    fun deleteMetrics(token: String, id: String) {
+        if (token.isEmpty()) return
+        viewModelScope.launch {
+            bodyRepo.deleteMetrics(token, id).onSuccess {
+                loadMetricsHistory(token)
+            }
+        }
     }
 }
