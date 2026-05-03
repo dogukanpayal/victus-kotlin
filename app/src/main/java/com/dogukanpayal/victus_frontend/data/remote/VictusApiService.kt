@@ -111,4 +111,15 @@ interface VictusApiService {
     suspend fun resetWorkoutLogs(
         @Header("Authorization") token: String
     ): Response<Unit>
+
+    @POST("v1/user/metrics/analyze")
+    suspend fun analyzeBodyComposition(
+        @Header("Authorization") token: String,
+        @Body request: AnalyzeBodyRequest
+    ): Response<BodyCompositionReport>
+
+    @GET("v1/user/metrics")
+    suspend fun getMetricsHistory(
+        @Header("Authorization") token: String
+    ): Response<List<HealthMetricsData>>
 }

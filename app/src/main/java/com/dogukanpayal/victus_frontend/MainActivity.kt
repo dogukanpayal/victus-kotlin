@@ -280,7 +280,7 @@ class MainActivity : ComponentActivity() {
                                                 viewModel = workoutViewModel,
                                                 token = setupToken.value
                                             )
-                                            Screen.Exercise -> ExerciseScreen(viewModel = exerciseViewModel)
+                                            Screen.Exercise -> ExerciseScreen(viewModel = exerciseViewModel, token = setupToken.value)
                                             Screen.Diet -> DietScreen(
                                                 viewModel = dietViewModel,
                                                 dietPlanViewModel = dietPlanViewModel,
