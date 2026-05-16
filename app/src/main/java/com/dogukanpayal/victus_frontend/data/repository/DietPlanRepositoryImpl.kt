@@ -2,9 +2,7 @@ package com.dogukanpayal.victus_frontend.data.repository
 
 import android.content.Context
 import android.net.Uri
-import com.dogukanpayal.victus_frontend.data.model.DailyDietPlan
-import com.dogukanpayal.victus_frontend.data.model.DietMeal
-import com.dogukanpayal.victus_frontend.data.model.DietPlan
+import com.dogukanpayal.victus_frontend.data.model.*
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import kotlinx.coroutines.Dispatchers
@@ -64,7 +62,8 @@ class DietPlanRepositoryImpl(private val context: Context) : DietPlanRepository 
                 val body = response.body()!!
                 
                 // Backend'den gelen düz listeyi günlere göre grupla
-                val mealsByDay = body.items.groupBy { it.dayNumber }
+                val safeItems = body.items ?: emptyList()
+                val mealsByDay = safeItems.groupBy { it.dayNumber }
                 
                 val days = mealsByDay.keys.sorted().map { dayNum ->
                     val meals = mealsByDay[dayNum]!!.map { item ->
@@ -221,6 +220,24 @@ class DietPlanRepositoryImpl(private val context: Context) : DietPlanRepository 
                 Result.success(response.body()!!.feedback)
             } else {
                 Result.failure(Exception("Analiz alınamadı: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun createDietPlan(
+        token: String,
+        request: com.dogukanpayal.victus_frontend.data.model.CreateDietPlanRequest
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val service = com.dogukanpayal.victus_frontend.data.remote.RetrofitClient.apiService
+            val response = service.createDietPlan("Bearer $token", request)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!.planId)
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Result.failure(Exception(errorBody ?: "Plan oluşturulamadı: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

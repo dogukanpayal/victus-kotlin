@@ -40,6 +40,8 @@ import com.dogukanpayal.victus_frontend.ui.exercise.ExerciseViewModel
 import com.dogukanpayal.victus_frontend.ui.diet.DietScreen
 import com.dogukanpayal.victus_frontend.ui.diet.DietViewModel
 import com.dogukanpayal.victus_frontend.ui.diet.DietPlanViewModel
+import com.dogukanpayal.victus_frontend.ui.diet.DietPlanCreatorScreen
+import com.dogukanpayal.victus_frontend.ui.diet.DietPlanCreatorViewModel
 import com.dogukanpayal.victus_frontend.ui.scanner.ScannerScreen
 import com.dogukanpayal.victus_frontend.ui.scanner.ScannerViewModel
 import com.dogukanpayal.victus_frontend.ui.components.MainBottomNavigation
@@ -49,7 +51,7 @@ import com.dogukanpayal.victus_frontend.data.repository.WorkoutPresetRepository
 import com.dogukanpayal.victus_frontend.data.repository.DailyWorkoutRepository
 import com.dogukanpayal.victus_frontend.data.storage.SessionManager
 
-enum class Screen { Login, Register, SetupProfile, Profile, EditProfile, Home, Workout, Exercise, Diet, Scanner }
+enum class Screen { Login, Register, SetupProfile, Profile, EditProfile, Home, Workout, Exercise, Diet, Scanner, DietPlanCreator }
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -110,6 +112,7 @@ class MainActivity : ComponentActivity() {
                     Screen.Profile -> "Profil"
                     Screen.EditProfile -> "Profili Düzenle"
                     Screen.SetupProfile -> "Profilini Tamamla"
+                    Screen.DietPlanCreator -> "Beslenme Planı Oluştur"
                     else -> ""
                 }
 
@@ -199,6 +202,7 @@ class MainActivity : ComponentActivity() {
                             val profileViewModel = remember { ProfileViewModel() }
                             val editProfileViewModel = remember { EditProfileViewModel(context = context) }
                             val homeViewModel = remember { HomeViewModel() }
+                            val dietPlanCreatorViewModel = remember { DietPlanCreatorViewModel(context = context) }
                             val workoutPresetRepository = remember { WorkoutPresetRepository(context) }
                             val dailyWorkoutRepository = remember { DailyWorkoutRepository(context) }
                             val workoutViewModel = remember { WorkoutViewModel(workoutPresetRepository, dailyWorkoutRepository) }
@@ -284,7 +288,11 @@ class MainActivity : ComponentActivity() {
                                             Screen.Diet -> DietScreen(
                                                 viewModel = dietViewModel,
                                                 dietPlanViewModel = dietPlanViewModel,
-                                                token = setupToken.value
+                                                token = setupToken.value,
+                                                onNavigateToCreator = { 
+                                                    dietPlanCreatorViewModel.resetForm()
+                                                    currentScreen.value = Screen.DietPlanCreator 
+                                                }
                                             )
                                             Screen.Scanner -> ScannerScreen(viewModel = scannerViewModel, token = setupToken.value)
                                             else -> {}
@@ -324,6 +332,16 @@ class MainActivity : ComponentActivity() {
                                         }
                                     )
                                 }
+
+                                Screen.DietPlanCreator -> DietPlanCreatorScreen(
+                                    viewModel = dietPlanCreatorViewModel,
+                                    token = setupToken.value,
+                                    onNavigateBack = { currentScreen.value = Screen.Diet },
+                                    onPlanCreated = {
+                                        dietPlanViewModel.loadRemotePlan(setupToken.value)
+                                        currentScreen.value = Screen.Diet
+                                    }
+                                )
                             }
                         }
                     }

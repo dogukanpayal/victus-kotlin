@@ -3,6 +3,7 @@ package com.dogukanpayal.victus_frontend.ui.diet
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,6 +38,7 @@ fun DietPlanSection(
     token: String,
     meals: List<MealItem>,
     onParseDiet: (String) -> Unit,
+    onNavigateToCreator: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -69,6 +72,8 @@ fun DietPlanSection(
             }
         } else if (uiState.plan == null) {
             UploadPromptCard(onUploadClick = { viewModel.onUploadRequested() })
+            Spacer(modifier = Modifier.height(12.dp))
+            ManualPlanCreateButton(onClick = onNavigateToCreator)
         } else {
             // Plan Varsa Göster
             DietPlanView(
@@ -402,5 +407,20 @@ private fun DietComplianceCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ManualPlanCreateButton(onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, Color(0xFF7C3AED).copy(alpha = 0.5f)),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF7C3AED))
+    ) {
+        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+        Spacer(modifier = Modifier.width(12.dp))
+        Text("Kendin Oluştur (Manuel)", fontWeight = FontWeight.Bold)
     }
 }

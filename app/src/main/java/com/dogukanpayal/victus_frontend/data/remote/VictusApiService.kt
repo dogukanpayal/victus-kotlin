@@ -134,4 +134,10 @@ interface VictusApiService {
         @Header("Authorization") token: String,
         @Body request: ProgressAnalysisRequest
     ): Response<ProgressAnalysisResponse>
+
+    @POST("v1/diet/plans")
+    suspend fun createDietPlan(
+        @Header("Authorization") token: String,
+        @Body request: CreateDietPlanRequest
+    ): Response<CreateDietPlanResponse>
 }

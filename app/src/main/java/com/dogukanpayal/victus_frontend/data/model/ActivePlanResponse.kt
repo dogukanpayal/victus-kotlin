@@ -13,7 +13,7 @@ data class ActivePlanResponse(
     val plan: DietPlanData,
     
     @Json(name = "items")
-    val items: List<DietPlanItemData>
+    val items: List<DietPlanItemData>? = emptyList()
 )
 
 @JsonClass(generateAdapter = true)

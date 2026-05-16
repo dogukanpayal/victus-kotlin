@@ -63,7 +63,8 @@ import java.util.Locale
 fun DietScreen(
     viewModel: DietViewModel,
     dietPlanViewModel: DietPlanViewModel,
-    token: String = ""
+    token: String = "",
+    onNavigateToCreator: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val pullToRefreshState = rememberPullToRefreshState()
@@ -322,7 +323,8 @@ fun DietScreen(
             onParseDiet = { rawText ->
                 val today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE)
                 viewModel.parseAndSaveDiet(token, rawText, today)
-            }
+            },
+            onNavigateToCreator = onNavigateToCreator
         )
 
         Spacer(modifier = Modifier.height(24.dp))
