@@ -48,6 +48,15 @@ fun DietitianPatientDetailScreen(
             Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = primaryBlue)
             }
+        } else if (uiState.error != null) {
+            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Hata: ${uiState.error}", color = Color.Red, modifier = Modifier.padding(16.dp))
+                    Button(onClick = { /* User can navigate back and try again */ onNavigateBack() }) {
+                        Text("Geri Git")
+                    }
+                }
+            }
         } else if (patient != null) {
             Column(
                 modifier = Modifier
@@ -57,7 +66,7 @@ fun DietitianPatientDetailScreen(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Patient Info Card
+                // ... (rest of patient detail UI)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -112,6 +121,11 @@ fun DietitianPatientDetailScreen(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Yeni Diyet Planı Oluştur", fontWeight = FontWeight.Bold)
                 }
+            }
+        } else {
+             // Fallback for null patient when not loading and no error
+             Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
+                Text("Hasta verisi bulunamadı.")
             }
         }
     }

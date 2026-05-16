@@ -140,4 +140,15 @@ interface VictusApiService {
         @Header("Authorization") token: String,
         @Body request: CreateDietPlanRequest
     ): Response<CreateDietPlanResponse>
+
+    @GET("v1/dietitian/patients")
+    suspend fun getDietitianPatients(
+        @Header("Authorization") token: String
+    ): Response<List<PatientSummaryResponse>>
+
+    @GET("v1/dietitian/patients/{id}")
+    suspend fun getDietitianPatientDetail(
+        @Header("Authorization") token: String,
+        @Path("id") patientId: String
+    ): Response<DietitianPatientDetailResponse>
 }

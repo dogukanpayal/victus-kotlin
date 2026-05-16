@@ -14,6 +14,7 @@ data class CreateDietPlanRequest(
     @Json(name = "duration_days") val durationDays: Int,
     @Json(name = "is_active") val isActive: Boolean = true,
     @Json(name = "start_date") val startDate: String, // YYYY-MM-DD
+    @Json(name = "patient_id") val patientId: String? = null,
     val items: List<CreateDietPlanItemRequest>
 )
 

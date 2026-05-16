@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.dogukanpayal.victus_frontend.data.model.PatientDetail
 import com.dogukanpayal.victus_frontend.data.model.PatientSummary
 import com.dogukanpayal.victus_frontend.data.repository.DietitianRepository
-import com.dogukanpayal.victus_frontend.data.repository.MockDietitianRepositoryImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +21,7 @@ data class DietitianUiState(
 )
 
 class DietitianViewModel(
-    private val repository: DietitianRepository = MockDietitianRepositoryImpl()
+    private val repository: DietitianRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DietitianUiState())

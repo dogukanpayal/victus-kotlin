@@ -232,6 +232,12 @@ class MainActivity : ComponentActivity() {
                                         userName.value = profile.fullName ?: "İsimsiz Kullanıcı"
                                         userEmail.value = profile.email
                                         userAvatarUrl.value = profile.avatarUrl
+                                        
+                                        // Rol bilgisini otomatik kaydet
+                                        profile.role?.let { role ->
+                                            sessionManager.saveRole(role)
+                                            userRole.value = role
+                                        }
                                     }
                                 }
                             }
@@ -240,7 +246,8 @@ class MainActivity : ComponentActivity() {
                             val registerViewModel = remember { RegisterViewModel() }
                             val setupProfileViewModel = remember { SetupProfileViewModel() }
                             val profileViewModel = remember { ProfileViewModel(sessionManager = sessionManager) }
-                            val dietitianViewModel = remember { DietitianViewModel() }
+                            val dietitianRepository = remember { com.dogukanpayal.victus_frontend.data.repository.DietitianRepositoryImpl(com.dogukanpayal.victus_frontend.data.remote.RetrofitClient.apiService) }
+                            val dietitianViewModel = remember { DietitianViewModel(repository = dietitianRepository) }
                             val editProfileViewModel = remember { EditProfileViewModel(context = context) }
                             val homeViewModel = remember { HomeViewModel() }
                             val dietPlanCreatorViewModel = remember { DietPlanCreatorViewModel(context = context) }
