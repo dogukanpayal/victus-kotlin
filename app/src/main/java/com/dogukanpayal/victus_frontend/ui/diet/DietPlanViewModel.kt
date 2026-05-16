@@ -133,4 +133,8 @@ class DietPlanViewModel(
             }
         }
     }
+
+    fun resetState() {
+        _uiState.value = DietPlanUiState(selectedDayIndex = getTodayIndex())
+    }
 }

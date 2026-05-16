@@ -74,6 +74,7 @@ class MainActivity : ComponentActivity() {
                 val userName = remember { mutableStateOf("Yükleniyor...") }
                 val userEmail = remember { mutableStateOf("") }
                 val userAvatarUrl = remember { mutableStateOf<String?>(null) }
+                val currentPatientIdForPlan = remember { mutableStateOf<String?>(null) }
 
                 val setupToken = remember { mutableStateOf("") }
                 val setupEmail = remember { mutableStateOf("") }
@@ -358,6 +359,14 @@ class MainActivity : ComponentActivity() {
                                     onLogout = {
                                         sessionManager.clearSession()
                                         setupToken.value = ""
+                                        
+                                        // RESET ALL VIEWMODELS
+                                        dietPlanViewModel.resetState()
+                                        dietViewModel.resetState()
+                                        homeViewModel.resetState()
+                                        dietitianViewModel.clearState()
+                                        workoutViewModel.resetState()
+
                                         currentScreen.value = Screen.Login
                                     }
                                 )
@@ -383,25 +392,35 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
 
-                                Screen.DietPlanCreator -> DietPlanCreatorScreen(
-                                    viewModel = dietPlanCreatorViewModel,
-                                    token = setupToken.value,
-                                    onNavigateBack = { 
-                                        if (userRole.value == "dietitian") {
-                                            currentScreen.value = Screen.DietitianPatientDetail
-                                        } else {
-                                            currentScreen.value = Screen.Diet
-                                        }
-                                    },
-                                    onPlanCreated = {
-                                        dietPlanViewModel.loadRemotePlan(setupToken.value)
-                                        if (userRole.value == "dietitian") {
-                                            currentScreen.value = Screen.DietitianPatientDetail
-                                        } else {
-                                            currentScreen.value = Screen.Diet
-                                        }
-                                    }
-                                )
+                                Screen.DietPlanCreator -> {
+                                     // Sayfa açıldığında ID'yi ViewModel'e set et
+                                     LaunchedEffect(currentPatientIdForPlan.value) {
+                                         dietPlanCreatorViewModel.setPatientId(currentPatientIdForPlan.value)
+                                     }
+                                     DietPlanCreatorScreen(
+                                         viewModel = dietPlanCreatorViewModel,
+                                         token = setupToken.value,
+                                         onNavigateBack = { 
+                                             if (userRole.value == "dietitian") {
+                                                 currentScreen.value = Screen.DietitianPatientDetail
+                                             } else {
+                                                 currentScreen.value = Screen.Diet
+                                             }
+                                         },
+                                         onPlanCreated = {
+                                             dietPlanViewModel.loadRemotePlan(setupToken.value)
+                                             if (userRole.value == "dietitian") {
+                                                 // Hastanın bilgilerini sunucudan tekrar çek (yenile)
+                                                 currentPatientIdForPlan.value?.let { patientId ->
+                                                     dietitianViewModel.loadPatientDetail(setupToken.value, patientId)
+                                                 }
+                                                 currentScreen.value = Screen.DietitianPatientDetail
+                                             } else {
+                                                 currentScreen.value = Screen.Diet
+                                             }
+                                         }
+                                     )
+                                 }
                                 Screen.DietitianDashboard -> DietitianDashboardScreen(
                                     viewModel = dietitianViewModel,
                                     userName = userName.value
@@ -423,7 +442,9 @@ class MainActivity : ComponentActivity() {
                                     viewModel = dietitianViewModel,
                                     onNavigateBack = { currentScreen.value = Screen.DietitianPatients },
                                     onCreatePlan = { patientId ->
-                                        // Patient ID handling will be added to Creator later
+                                        currentPatientIdForPlan.value = patientId
+                                        dietPlanCreatorViewModel.resetForm()
+                                        dietPlanCreatorViewModel.setPatientId(patientId)
                                         currentScreen.value = Screen.DietPlanCreator
                                     }
                                 )

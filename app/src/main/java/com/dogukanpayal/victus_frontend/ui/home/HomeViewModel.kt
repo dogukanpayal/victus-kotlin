@@ -47,4 +47,8 @@ class HomeViewModel : ViewModel() {
             }
         }
     }
+
+    fun resetState() {
+        _uiState.value = NutritionUiState()
+    }
 }

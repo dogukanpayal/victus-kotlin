@@ -70,4 +70,8 @@ class DietitianViewModel(
             }
         }
     }
+
+    fun clearState() {
+        _uiState.value = DietitianUiState()
+    }
 }

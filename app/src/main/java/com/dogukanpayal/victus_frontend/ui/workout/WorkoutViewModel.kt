@@ -230,4 +230,8 @@ class WorkoutViewModel(
     fun clearMessages() {
         _uiState.update { it.copy(error = null, successMessage = null) }
     }
+
+    fun resetState() {
+        _uiState.value = WorkoutUiState()
+    }
 }

@@ -23,7 +23,8 @@ data class DietPlanCreatorUiState(
     val days: List<DayFormState> = generateDays(7),
     val isSubmitting: Boolean = false,
     val submitError: String? = null,
-    val submitSuccess: Boolean = false
+    val submitSuccess: Boolean = false,
+    val patientId: String? = null
 )
 
 fun generateDays(count: Int): List<DayFormState> {
@@ -50,6 +51,10 @@ class DietPlanCreatorViewModel(
 
     fun updateTitle(title: String) {
         _uiState.update { it.copy(planTitle = title) }
+    }
+
+    fun setPatientId(id: String?) {
+        _uiState.update { it.copy(patientId = id) }
     }
 
     fun updateStartDate(date: String) {
@@ -202,6 +207,8 @@ class DietPlanCreatorViewModel(
             _uiState.update { it.copy(isSubmitting = true, submitError = null) }
             
             val state = _uiState.value
+            android.util.Log.d("DietPlanCreator", "Submitting plan. patientId: ${state.patientId}, title: ${state.planTitle}")
+            
             val requestItems = state.days.flatMap { day ->
                 day.meals.mapIndexed { index, meal ->
                     CreateDietPlanItemRequest(
@@ -222,6 +229,7 @@ class DietPlanCreatorViewModel(
                 durationDays = state.durationDays,
                 isActive = true,
                 startDate = state.startDate,
+                patientId = state.patientId,
                 items = requestItems
             )
             
@@ -239,6 +247,6 @@ class DietPlanCreatorViewModel(
     }
 
     fun resetForm() {
-        _uiState.value = DietPlanCreatorUiState()
+        _uiState.update { DietPlanCreatorUiState(patientId = it.patientId) }
     }
 }

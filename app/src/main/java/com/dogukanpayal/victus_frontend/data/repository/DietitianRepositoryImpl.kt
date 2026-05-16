@@ -47,7 +47,8 @@ class DietitianRepositoryImpl(
                 Result.success(PatientDetail(
                     profile = body.profile,
                     activeDietPlanSummary = body.activeDietPlanSummary,
-                    recentWorkoutSummary = body.recentWorkoutSummary
+                    recentWorkoutSummary = body.recentWorkoutSummary,
+                    complianceSummary = body.complianceSummary
                 ))
             } else {
                 Result.failure(Exception("Hasta detayı getirilemedi: ${response.code()}"))

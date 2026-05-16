@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dogukanpayal.victus_frontend.ui.dietitian.components.CompliancePieChart
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +53,7 @@ fun DietitianPatientDetailScreen(
             Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Hata: ${uiState.error}", color = Color.Red, modifier = Modifier.padding(16.dp))
-                    Button(onClick = { /* User can navigate back and try again */ onNavigateBack() }) {
+                    Button(onClick = { onNavigateBack() }) {
                         Text("Geri Git")
                     }
                 }
@@ -66,7 +67,7 @@ fun DietitianPatientDetailScreen(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // ... (rest of patient detail UI)
+                // Patient Info Card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -92,6 +93,11 @@ fun DietitianPatientDetailScreen(
                     MetricBox(label = "Kilo", value = "${patient.profile.weightKg} kg", modifier = Modifier.weight(1f))
                     MetricBox(label = "Boy", value = "${patient.profile.heightCm.toInt()} cm", modifier = Modifier.weight(1f))
                     MetricBox(label = "Yaş", value = "${patient.profile.age}", modifier = Modifier.weight(1f))
+                }
+
+                // [NEW] Compliance Dashboard
+                patient.complianceSummary?.let { compliance ->
+                    CompliancePieChart(data = compliance)
                 }
 
                 // [NEW] Active Diet Plan Summary
@@ -123,7 +129,6 @@ fun DietitianPatientDetailScreen(
                 }
             }
         } else {
-             // Fallback for null patient when not loading and no error
              Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
                 Text("Hasta verisi bulunamadı.")
             }

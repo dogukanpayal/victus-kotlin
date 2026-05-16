@@ -161,6 +161,10 @@ class DietViewModel : ViewModel() {
             }
         }
     }
+
+    fun resetState() {
+        _uiState.value = NutritionUiState()
+    }
 }
 
 

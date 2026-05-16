@@ -18,13 +18,26 @@ data class PatientDetail(
     val dailySummary: DailySummaryResponse? = null,
     val activePlan: ActivePlanResponse? = null,
     val activeDietPlanSummary: String? = null,
-    val recentWorkoutSummary: String? = null
+    val recentWorkoutSummary: String? = null,
+    val complianceSummary: ComplianceSummary? = null
+)
+
+data class ComplianceSummary(
+    @Json(name = "target_calories") val targetCalories: Double,
+    @Json(name = "actual_calories") val actualCalories: Double,
+    @Json(name = "target_protein") val targetProtein: Double,
+    @Json(name = "actual_protein") val actualProtein: Double,
+    @Json(name = "target_carbs") val targetCarbs: Double,
+    @Json(name = "actual_carbs") val actualCarbs: Double,
+    @Json(name = "target_fat") val targetFat: Double,
+    @Json(name = "actual_fat") val actualFat: Double
 )
 
 data class DietitianPatientDetailResponse(
     val profile: ProfileResponse,
     @Json(name = "active_diet_plan_summary") val activeDietPlanSummary: String?,
-    @Json(name = "recent_workout_summary") val recentWorkoutSummary: String?
+    @Json(name = "recent_workout_summary") val recentWorkoutSummary: String?,
+    @Json(name = "compliance_summary") val complianceSummary: ComplianceSummary?
 )
 
 data class PatientSummaryResponse(
