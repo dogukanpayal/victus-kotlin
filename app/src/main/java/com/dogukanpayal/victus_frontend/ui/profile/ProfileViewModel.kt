@@ -23,14 +23,24 @@ data class ProfileState(
     val fitnessGoal: Goal = Goal.LOSE_WEIGHT,
     val avatarUrl: String? = null,
     val version: String = "2.4.1 (BUILD 890)",
-    val isLoading: Boolean = true
+    val isLoading: Boolean = true,
+    val role: String = "patient"
 )
 
 class ProfileViewModel(
-    private val profileRepository: ProfileRepository = ProfileRepositoryImpl()
+    private val profileRepository: ProfileRepository = ProfileRepositoryImpl(),
+    private val sessionManager: com.dogukanpayal.victus_frontend.data.storage.SessionManager? = null
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(ProfileState())
+    private val _uiState = MutableStateFlow(ProfileState(
+        role = sessionManager?.getRole() ?: "patient"
+    ))
     val uiState: StateFlow<ProfileState> = _uiState.asStateFlow()
+
+    fun onRoleToggle(isDietitian: Boolean) {
+        val newRole = if (isDietitian) "dietitian" else "patient"
+        _uiState.value = _uiState.value.copy(role = newRole)
+        sessionManager?.saveRole(newRole)
+    }
 
     fun loadUserProfile(accessToken: String) {
         viewModelScope.launch {

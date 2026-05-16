@@ -50,8 +50,14 @@ import com.dogukanpayal.victus_frontend.data.repository.ProfileRepositoryImpl
 import com.dogukanpayal.victus_frontend.data.repository.WorkoutPresetRepository
 import com.dogukanpayal.victus_frontend.data.repository.DailyWorkoutRepository
 import com.dogukanpayal.victus_frontend.data.storage.SessionManager
+import com.dogukanpayal.victus_frontend.ui.dietitian.*
+import com.dogukanpayal.victus_frontend.ui.components.DietitianBottomNavigation
 
-enum class Screen { Login, Register, SetupProfile, Profile, EditProfile, Home, Workout, Exercise, Diet, Scanner, DietPlanCreator }
+enum class Screen { 
+    Login, Register, SetupProfile, Profile, EditProfile, 
+    Home, Workout, Exercise, Diet, Scanner, DietPlanCreator,
+    DietitianDashboard, DietitianPatients, DietitianPatientDetail
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 class MainActivity : ComponentActivity() {
@@ -75,6 +81,29 @@ class MainActivity : ComponentActivity() {
                 val profileRepository = remember { ProfileRepositoryImpl() }
                 val context = LocalContext.current.applicationContext
                 val sessionManager = remember { SessionManager(context) }
+                val userRole = remember { mutableStateOf(sessionManager.getRole()) }
+
+                // Role senkronizasyonu
+                LaunchedEffect(currentScreen.value) {
+                    userRole.value = sessionManager.getRole()
+                }
+
+                // Otomatik Yönlendirme (Rol değişiminde veya girişte)
+                LaunchedEffect(userRole.value) {
+                    if (setupToken.value.isNotEmpty()) {
+                        if (userRole.value == "dietitian") {
+                            // Diyetisyen moduna geçildiyse ve şu an hasta ekranlarındaysa yönlendir
+                            if (currentScreen.value in listOf(Screen.Home, Screen.Workout, Screen.Exercise, Screen.Diet, Screen.Scanner)) {
+                                currentScreen.value = Screen.DietitianDashboard
+                            }
+                        } else {
+                            // Hasta moduna geçildiyse ve şu an diyetisyen ekranlarındaysa yönlendir
+                            if (currentScreen.value in listOf(Screen.DietitianDashboard, Screen.DietitianPatients, Screen.DietitianPatientDetail)) {
+                                currentScreen.value = Screen.Home
+                            }
+                        }
+                    }
+                }
 
                 // Uygulama açılışında kaydedilmiş token kontrolü
                 LaunchedEffect(Unit) {
@@ -100,7 +129,8 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val showBottomBar = currentScreen.value in listOf(
-                    Screen.Home, Screen.Workout, Screen.Exercise, Screen.Diet, Screen.Scanner
+                    Screen.Home, Screen.Workout, Screen.Exercise, Screen.Diet, Screen.Scanner,
+                    Screen.DietitianDashboard, Screen.DietitianPatients
                 )
 
                 val screenTitle = when (currentScreen.value) {
@@ -113,6 +143,9 @@ class MainActivity : ComponentActivity() {
                     Screen.EditProfile -> "Profili Düzenle"
                     Screen.SetupProfile -> "Profilini Tamamla"
                     Screen.DietPlanCreator -> "Beslenme Planı Oluştur"
+                    Screen.DietitianDashboard -> "Panel"
+                    Screen.DietitianPatients -> "Hastalarım"
+                    Screen.DietitianPatientDetail -> "Hasta Detayı"
                     else -> ""
                 }
 
@@ -172,10 +205,17 @@ class MainActivity : ComponentActivity() {
                         },
                         bottomBar = {
                             if (showBottomBar) {
-                                MainBottomNavigation(
-                                    currentScreen = currentScreen.value,
-                                    onNavigate = { screen -> currentScreen.value = screen }
-                                )
+                                if (userRole.value == "dietitian") {
+                                    DietitianBottomNavigation(
+                                        currentScreen = currentScreen.value,
+                                        onNavigate = { screen -> currentScreen.value = screen }
+                                    )
+                                } else {
+                                    MainBottomNavigation(
+                                        currentScreen = currentScreen.value,
+                                        onNavigate = { screen -> currentScreen.value = screen }
+                                    )
+                                }
                             }
                         }
                     ) { innerPadding ->
@@ -199,7 +239,8 @@ class MainActivity : ComponentActivity() {
                             val loginViewModel = remember { LoginViewModel(sessionManager = sessionManager) }
                             val registerViewModel = remember { RegisterViewModel() }
                             val setupProfileViewModel = remember { SetupProfileViewModel() }
-                            val profileViewModel = remember { ProfileViewModel() }
+                            val profileViewModel = remember { ProfileViewModel(sessionManager = sessionManager) }
+                            val dietitianViewModel = remember { DietitianViewModel() }
                             val editProfileViewModel = remember { EditProfileViewModel(context = context) }
                             val homeViewModel = remember { HomeViewModel() }
                             val dietPlanCreatorViewModel = remember { DietPlanCreatorViewModel(context = context) }
@@ -225,7 +266,7 @@ class MainActivity : ComponentActivity() {
 
                             // Pager ve Screen senkronizasyonu
                             LaunchedEffect(pagerState.currentPage) {
-                                if (showBottomBar) {
+                                if (showBottomBar && userRole.value != "dietitian") {
                                     currentScreen.value = mainScreens[pagerState.currentPage]
                                 }
                             }
@@ -303,7 +344,9 @@ class MainActivity : ComponentActivity() {
                                 Screen.Profile -> ProfileScreen(
                                     viewModel = profileViewModel,
                                     accessToken = setupToken.value,
-                                    onNavigateBack = { currentScreen.value = Screen.Home },
+                                    onNavigateBack = { 
+                                        currentScreen.value = if (userRole.value == "dietitian") Screen.DietitianDashboard else Screen.Home 
+                                    },
                                     onNavigateToEditProfile = { currentScreen.value = Screen.EditProfile },
                                     onLogout = {
                                         sessionManager.clearSession()
@@ -336,10 +379,45 @@ class MainActivity : ComponentActivity() {
                                 Screen.DietPlanCreator -> DietPlanCreatorScreen(
                                     viewModel = dietPlanCreatorViewModel,
                                     token = setupToken.value,
-                                    onNavigateBack = { currentScreen.value = Screen.Diet },
+                                    onNavigateBack = { 
+                                        if (userRole.value == "dietitian") {
+                                            currentScreen.value = Screen.DietitianPatientDetail
+                                        } else {
+                                            currentScreen.value = Screen.Diet
+                                        }
+                                    },
                                     onPlanCreated = {
                                         dietPlanViewModel.loadRemotePlan(setupToken.value)
-                                        currentScreen.value = Screen.Diet
+                                        if (userRole.value == "dietitian") {
+                                            currentScreen.value = Screen.DietitianPatientDetail
+                                        } else {
+                                            currentScreen.value = Screen.Diet
+                                        }
+                                    }
+                                )
+                                Screen.DietitianDashboard -> DietitianDashboardScreen(
+                                    viewModel = dietitianViewModel,
+                                    userName = userName.value
+                                )
+                                Screen.DietitianPatients -> {
+                                    LaunchedEffect(Unit) {
+                                        dietitianViewModel.loadPatients(setupToken.value)
+                                    }
+                                    DietitianPatientListScreen(
+                                        viewModel = dietitianViewModel,
+                                        onPatientClick = { patientId ->
+                                            android.util.Log.d("Victus", "Patient clicked: $patientId")
+                                            dietitianViewModel.loadPatientDetail(setupToken.value, patientId)
+                                            currentScreen.value = Screen.DietitianPatientDetail
+                                        }
+                                    )
+                                }
+                                Screen.DietitianPatientDetail -> DietitianPatientDetailScreen(
+                                    viewModel = dietitianViewModel,
+                                    onNavigateBack = { currentScreen.value = Screen.DietitianPatients },
+                                    onCreatePlan = { patientId ->
+                                        // Patient ID handling will be added to Creator later
+                                        currentScreen.value = Screen.DietPlanCreator
                                     }
                                 )
                             }

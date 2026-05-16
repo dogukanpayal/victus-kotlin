@@ -263,6 +263,52 @@ fun ProfileScreen(
                     iconBackground = lightGray,
                     iconColor = darkText
                 )
+                HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
+                
+                // Geliştirici Modu: Diyetisyen Toggle
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFEFF6FF)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AdminPanelSettings,
+                            contentDescription = null,
+                            tint = Color(0xFF3B82F6),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Diyetisyen Modu",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = darkText
+                        )
+                        Text(
+                            text = "Test amaçlı arayüz değişimi",
+                            fontSize = 12.sp,
+                            color = grayText
+                        )
+                    }
+                    Switch(
+                        checked = uiState.role == "dietitian",
+                        onCheckedChange = { viewModel.onRoleToggle(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Color(0xFF3B82F6)
+                        )
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(32.dp))

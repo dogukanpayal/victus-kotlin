@@ -17,6 +17,7 @@ class SessionManager(context: Context) {
         private const val PREF_NAME = "victus_session"
         private const val KEY_TOKEN = "access_token"
         private const val KEY_REMEMBER_ME = "remember_me"
+        private const val KEY_ROLE = "user_role"
     }
 
     /** Token'ı kalıcı olarak kaydeder (rememberMe = true ise). */
@@ -38,5 +39,15 @@ class SessionManager(context: Context) {
     /** Oturumu temizler (logout veya rememberMe kapalıyken). */
     fun clearSession() {
         prefs.edit().clear().apply()
+    }
+
+    /** Kullanıcı rolünü kaydeder. */
+    fun saveRole(role: String) {
+        prefs.edit().putString(KEY_ROLE, role).apply()
+    }
+
+    /** Kaydedilmiş rolü döner (Varsayılan: patient). */
+    fun getRole(): String {
+        return prefs.getString(KEY_ROLE, "patient") ?: "patient"
     }
 }

@@ -13,5 +13,6 @@ data class ProfileResponse(
     val bmr: Double,
     val goal: String,
     @Json(name = "daily_calories") val dailyCalories: Double? = null,
-    @Json(name = "avatar_url") val avatarUrl: String? = null
+    @Json(name = "avatar_url") val avatarUrl: String? = null,
+    val role: String? = null
 )
