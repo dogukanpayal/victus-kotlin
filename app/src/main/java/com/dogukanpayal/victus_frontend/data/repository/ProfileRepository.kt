@@ -13,6 +13,7 @@ interface ProfileRepository {
         age: Int,
         sex: String,
         goal: String,
+        kvkkConsentApproved: Boolean,
         avatarUrl: String?
     ): Result<ProfileResponse>
 
@@ -33,6 +34,7 @@ class ProfileRepositoryImpl(
         age: Int,
         sex: String,
         goal: String,
+        kvkkConsentApproved: Boolean,
         avatarUrl: String?
     ): Result<ProfileResponse> {
         return try {
@@ -44,6 +46,7 @@ class ProfileRepositoryImpl(
                 age = age,
                 sex = sex,
                 goal = goal,
+                kvkkConsentApproved = kvkkConsentApproved,
                 avatarUrl = avatarUrl
             )
             // Backend expects "Bearer <token>"

@@ -52,6 +52,7 @@ fun SetupProfileScreen(
         val selectedSex by viewModel.selectedSex.collectAsState()
         val updateState by viewModel.updateState.collectAsState()
         val errorMessage by viewModel.errorMessage.collectAsState()
+        val kvkkConsentApproved by viewModel.kvkkConsentApproved.collectAsState()
 
 
         Scaffold(
@@ -451,6 +452,44 @@ fun SetupProfileScreen(
                                         Spacer(modifier = Modifier.height(16.dp))
                                 }
 
+                                // KVKK/GDPR Consent Box
+                                Row(
+                                        modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(16.dp))
+                                                .background(if (kvkkConsentApproved) superLightGreen else lightGray.copy(alpha = 0.5f))
+                                                .clickable(enabled = updateState != ProfileUpdateState.LOADING) {
+                                                        viewModel.onKvkkConsentChanged(!kvkkConsentApproved)
+                                                }
+                                                .padding(16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                        Checkbox(
+                                                checked = kvkkConsentApproved,
+                                                onCheckedChange = { viewModel.onKvkkConsentChanged(it) },
+                                                enabled = updateState != ProfileUpdateState.LOADING,
+                                                colors = CheckboxDefaults.colors(checkedColor = primaryGreen)
+                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                        text = "KVKK ve Gizlilik Sözleşmesi",
+                                                        fontSize = 14.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = darkText
+                                                )
+                                                Spacer(modifier = Modifier.height(2.dp))
+                                                Text(
+                                                        text = "Diyetisyenimin sağlık ve fiziksel verilerimi görmesine ve takip etmesine yasal olarak izin veriyorum.",
+                                                        fontSize = 12.sp,
+                                                        color = grayText,
+                                                        lineHeight = 16.sp
+                                                )
+                                        }
+                                }
+
+                                Spacer(modifier = Modifier.height(24.dp))
+
                                 // Continue Button
                                 Button(
                                         onClick = {
@@ -462,7 +501,7 @@ fun SetupProfileScreen(
                                                 ButtonDefaults.buttonColors(
                                                         containerColor = primaryGreen
                                                 ),
-                                        enabled = updateState != ProfileUpdateState.LOADING
+                                        enabled = updateState != ProfileUpdateState.LOADING && kvkkConsentApproved
                                 ) {
                                         if (updateState == ProfileUpdateState.LOADING) {
                                                 CircularProgressIndicator(

@@ -35,6 +35,7 @@ data class EditProfileState(
     val avatarUrl: String? = null,
     val selectedImageUri: String? = null,
     val isLoading: Boolean = true,
+    val kvkkConsentApproved: Boolean = true,
     val updateState: EditProfileUpdateState = EditProfileUpdateState.IDLE,
     val errorMessage: String = ""
 )
@@ -83,6 +84,7 @@ class EditProfileViewModel(
                             sex = profileResponse.sex,
                             fitnessGoal = goalEnum,
                             avatarUrl = profileResponse.avatarUrl,
+                            kvkkConsentApproved = profileResponse.kvkkConsentApproved ?: true,
                             isLoading = false,
                             updateState = EditProfileUpdateState.IDLE
                         )
@@ -223,6 +225,7 @@ class EditProfileViewModel(
                     age = currentState.age,
                     sex = currentState.sex,
                     goal = goalString,
+                    kvkkConsentApproved = currentState.kvkkConsentApproved,
                     avatarUrl = finalAvatarUrl
                 )
                 

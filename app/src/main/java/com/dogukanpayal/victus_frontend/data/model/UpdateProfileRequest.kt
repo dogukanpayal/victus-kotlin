@@ -10,6 +10,7 @@ data class UpdateProfileRequest(
     val age: Int,
     val sex: String,
     val goal: String,
+    @Json(name = "kvkk_consent_approved") val kvkkConsentApproved: Boolean,
     @Json(name = "avatar_url") val avatarUrl: String? = null
 )
 

@@ -14,5 +14,6 @@ data class ProfileResponse(
     val goal: String,
     @Json(name = "daily_calories") val dailyCalories: Double? = null,
     @Json(name = "avatar_url") val avatarUrl: String? = null,
-    val role: String? = null
+    val role: String? = null,
+    @Json(name = "kvkk_consent_approved") val kvkkConsentApproved: Boolean? = null
 )

@@ -56,6 +56,13 @@ class SetupProfileViewModel(
     private val _profileResponse = MutableStateFlow<ProfileResponse?>(null)
     val profileResponse: StateFlow<ProfileResponse?> = _profileResponse.asStateFlow()
 
+    private val _kvkkConsentApproved = MutableStateFlow(false)
+    val kvkkConsentApproved: StateFlow<Boolean> = _kvkkConsentApproved.asStateFlow()
+
+    fun onKvkkConsentChanged(approved: Boolean) {
+        _kvkkConsentApproved.value = approved
+    }
+
     fun onHeightChanged(height: Float) {
         _heightCm.value = height
     }
@@ -108,6 +115,7 @@ class SetupProfileViewModel(
                             age = ageValue,
                             sex = sexValue,
                             goal = goalValue,
+                            kvkkConsentApproved = _kvkkConsentApproved.value,
                             avatarUrl = null
                     )
 
