@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dogukanpayal.victus_frontend.data.model.PatientSummary
+import coil3.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,12 +97,21 @@ fun PatientCard(patient: PatientSummary, onClick: () -> Unit) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar Placeholder
+            // Avatar Loading
             Box(
                 modifier = Modifier.size(50.dp).clip(RoundedCornerShape(14.dp)).background(Color(0xFFF1F5F9)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF94A3B8))
+                if (!patient.avatarUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = patient.avatarUrl,
+                        contentDescription = "Hasta Profil Fotoğrafı",
+                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(14.dp)),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                } else {
+                    Icon(Icons.Default.Person, contentDescription = null, tint = Color(0xFF94A3B8))
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))

@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.dogukanpayal.victus_frontend.ui.dietitian.components.CompliancePieChart
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import coil3.compose.AsyncImage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,7 +95,16 @@ fun DietitianPatientDetailScreen(
                                 modifier = Modifier.size(64.dp).background(Color(0xFFEFF6FF), RoundedCornerShape(16.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Icon(Icons.Default.Person, contentDescription = null, tint = primaryBlue, modifier = Modifier.size(32.dp))
+                                if (!patient.profile.avatarUrl.isNullOrEmpty()) {
+                                    AsyncImage(
+                                        model = patient.profile.avatarUrl,
+                                        contentDescription = "Hasta Profil Fotoğrafı",
+                                        modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(16.dp)),
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                    )
+                                } else {
+                                    Icon(Icons.Default.Person, contentDescription = null, tint = primaryBlue, modifier = Modifier.size(32.dp))
+                                }
                             }
                             Spacer(modifier = Modifier.width(16.dp))
                             Column {
