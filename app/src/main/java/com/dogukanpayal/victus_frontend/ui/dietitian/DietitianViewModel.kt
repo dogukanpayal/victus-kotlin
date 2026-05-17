@@ -80,7 +80,15 @@ class DietitianViewModel(
 
     fun loadPatientDetail(token: String, patientId: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null, selectedPatient = null) }
+            _uiState.update { state ->
+                val current = state.selectedPatient
+                val shouldClear = current == null || current.profile.id != patientId
+                state.copy(
+                    isLoading = true,
+                    error = null,
+                    selectedPatient = if (shouldClear) null else current
+                )
+            }
             val result = repository.getPatientDetail(token, patientId)
             result.onSuccess { detail ->
                 _uiState.update { it.copy(selectedPatient = detail, isLoading = false) }

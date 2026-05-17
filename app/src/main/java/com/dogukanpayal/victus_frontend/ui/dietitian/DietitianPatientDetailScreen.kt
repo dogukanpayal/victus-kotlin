@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dogukanpayal.victus_frontend.ui.dietitian.components.CompliancePieChart
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,6 +35,7 @@ fun DietitianPatientDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     val patient = uiState.selectedPatient
     val primaryBlue = Color(0xFF3B82F6)
+    val pullToRefreshState = rememberPullToRefreshState()
 
     Scaffold(
         topBar = {
@@ -48,183 +51,193 @@ fun DietitianPatientDetailScreen(
         },
         containerColor = Color(0xFFF8FAFC)
     ) { innerPadding ->
-        if (uiState.isLoading) {
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = primaryBlue)
-            }
-        } else if (uiState.error != null) {
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Hata: ${uiState.error}", color = Color.Red, modifier = Modifier.padding(16.dp))
-                    Button(onClick = { onNavigateBack() }) {
-                        Text("Geri Git")
-                    }
+        PullToRefreshBox(
+            isRefreshing = uiState.isLoading,
+            onRefresh = {
+                patient?.profile?.id?.let { patientId ->
+                    viewModel.loadPatientDetail(token, patientId)
                 }
-            }
-        } else if (patient != null) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Patient Info Card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier.size(64.dp).background(Color(0xFFEFF6FF), RoundedCornerShape(16.dp)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = primaryBlue, modifier = Modifier.size(32.dp))
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(patient.profile.fullName ?: "İsimsiz Hasta", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                            Text(patient.profile.email, fontSize = 14.sp, color = Color(0xFF64748B))
+            },
+            state = pullToRefreshState,
+            modifier = Modifier.fillMaxSize().padding(innerPadding)
+        ) {
+            if (uiState.isLoading && patient == null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = primaryBlue)
+                }
+            } else if (uiState.error != null) {
+                Box(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Hata: ${uiState.error}", color = Color.Red, modifier = Modifier.padding(16.dp))
+                        Button(onClick = { onNavigateBack() }) {
+                            Text("Geri Git")
                         }
                     }
                 }
-
-                // Stats Section
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    MetricBox(label = "Kilo", value = "${patient.profile.weightKg} kg", modifier = Modifier.weight(1f))
-                    MetricBox(label = "Boy", value = "${patient.profile.heightCm.toInt()} cm", modifier = Modifier.weight(1f))
-                    MetricBox(label = "Yaş", value = "${patient.profile.age}", modifier = Modifier.weight(1f))
-                }
-
-                // [NEW] Compliance Dashboard
-                patient.complianceSummary?.let { compliance ->
-                    CompliancePieChart(data = compliance)
-                }
-
-                // [NEW] Active Diet Plan Summary
-                SummaryCard(
-                    title = "Aktif Diyet Planı",
-                    content = patient.activeDietPlanSummary ?: "Diyet planı bulunamadı.",
-                    icon = Icons.Default.Restaurant,
-                    color = Color(0xFF22C55E)
-                )
-
-                // [NEW] Exercise Status
-                SummaryCard(
-                    title = "Egzersiz Durumu",
-                    content = patient.recentWorkoutSummary ?: "Henüz antrenman kaydı yok.",
-                    icon = Icons.Default.FitnessCenter,
-                    color = Color(0xFFEAB308)
-                )
-
-                // Weekly Report Button
-                val context = androidx.compose.ui.platform.LocalContext.current
-
-                val filePickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-                    contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
-                ) { uri: android.net.Uri? ->
-                    uri?.let {
-                        val contentResolver = context.contentResolver
-                        val mimeType = contentResolver.getType(it) ?: "application/pdf"
-                        viewModel.uploadPatientDietPlan(context, token, patient.profile.id, it, mimeType)
-                    }
-                }
-                
-                LaunchedEffect(uiState.reportDownloadSuccessMessage, uiState.reportDownloadError) {
-                    uiState.reportDownloadSuccessMessage?.let {
-                        android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
-                        viewModel.clearReportDownloadStatus()
-                    }
-                    uiState.reportDownloadError?.let {
-                        android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
-                        viewModel.clearReportDownloadStatus()
-                    }
-                }
-
-                Button(
-                    onClick = {
-                        viewModel.downloadWeeklyReport(
-                            token = token,
-                            patientId = patient.profile.id,
-                            patientName = patient.profile.fullName ?: "Hasta",
-                            context = context
-                        )
-                    },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                    shape = RoundedCornerShape(16.dp),
-                    enabled = !uiState.isDownloadingReport
+            } else if (patient != null) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    if (uiState.isDownloadingReport) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                    } else {
-                        Icon(Icons.Default.Download, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Haftalık PDF Raporu İndir", fontWeight = FontWeight.Bold)
-                    }
-                }
-
-                // Diyet Listesi Yükle Button
-                Button(
-                    onClick = {
-                        filePickerLauncher.launch("*/*")
-                    },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)), // Modern Indigo
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Icon(Icons.Default.Upload, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Diyet Listesi Yükle (PDF/Görsel)", fontWeight = FontWeight.Bold)
-                }
-
-                // Action Buttons Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Message Button
-                    var showMessageSheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-                    
-                    Button(
-                        onClick = { showMessageSheet = true },
-                        modifier = Modifier.weight(1f).height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F5F9)),
-                        shape = RoundedCornerShape(16.dp)
+                    // Patient Info Card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(24.dp)
                     ) {
-                        Icon(Icons.Default.Send, contentDescription = null, tint = primaryBlue)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Mesaj Gönder", fontWeight = FontWeight.Bold, color = primaryBlue)
-                    }
-
-                    // Diet Plan Button
-                    Button(
-                        onClick = { onCreatePlan(patient.profile.id) },
-                        modifier = Modifier.weight(1f).height(56.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Diyet Yaz", fontWeight = FontWeight.Bold)
-                    }
-                    
-                    if (showMessageSheet) {
-                        MessageBottomSheet(
-                            onDismiss = { showMessageSheet = false },
-                            onSend = { title, msg ->
-                                viewModel.sendFeedback(token, patient.profile.id, title, msg)
-                                showMessageSheet = false
+                        Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier.size(64.dp).background(Color(0xFFEFF6FF), RoundedCornerShape(16.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Person, contentDescription = null, tint = primaryBlue, modifier = Modifier.size(32.dp))
                             }
-                        )
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(patient.profile.fullName ?: "İsimsiz Hasta", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                                Text(patient.profile.email, fontSize = 14.sp, color = Color(0xFF64748B))
+                            }
+                        }
+                    }
+
+                    // Stats Section
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        MetricBox(label = "Kilo", value = "${patient.profile.weightKg} kg", modifier = Modifier.weight(1f))
+                        MetricBox(label = "Boy", value = "${patient.profile.heightCm.toInt()} cm", modifier = Modifier.weight(1f))
+                        MetricBox(label = "Yaş", value = "${patient.profile.age}", modifier = Modifier.weight(1f))
+                    }
+
+                    // [NEW] Compliance Dashboard
+                    patient.complianceSummary?.let { compliance ->
+                        CompliancePieChart(data = compliance)
+                    }
+
+                    // [NEW] Active Diet Plan Summary
+                    SummaryCard(
+                        title = "Aktif Diyet Planı",
+                        content = patient.activeDietPlanSummary ?: "Diyet planı bulunamadı.",
+                        icon = Icons.Default.Restaurant,
+                        color = Color(0xFF22C55E)
+                    )
+
+                    // [NEW] Exercise Status
+                    SummaryCard(
+                        title = "Egzersiz Durumu",
+                        content = patient.recentWorkoutSummary ?: "Henüz antrenman kaydı yok.",
+                        icon = Icons.Default.FitnessCenter,
+                        color = Color(0xFFEAB308)
+                    )
+
+                    // Weekly Report Button
+                    val context = androidx.compose.ui.platform.LocalContext.current
+
+                    val filePickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+                    ) { uri: android.net.Uri? ->
+                        uri?.let {
+                            val contentResolver = context.contentResolver
+                            val mimeType = contentResolver.getType(it) ?: "application/pdf"
+                            viewModel.uploadPatientDietPlan(context, token, patient.profile.id, it, mimeType)
+                        }
+                    }
+                    
+                    LaunchedEffect(uiState.reportDownloadSuccessMessage, uiState.reportDownloadError) {
+                        uiState.reportDownloadSuccessMessage?.let {
+                            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
+                            viewModel.clearReportDownloadStatus()
+                        }
+                        uiState.reportDownloadError?.let {
+                            android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
+                            viewModel.clearReportDownloadStatus()
+                        }
+                    }
+
+                    Button(
+                        onClick = {
+                            viewModel.downloadWeeklyReport(
+                                token = token,
+                                patientId = patient.profile.id,
+                                patientName = patient.profile.fullName ?: "Hasta",
+                                context = context
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                        shape = RoundedCornerShape(16.dp),
+                        enabled = !uiState.isDownloadingReport
+                    ) {
+                        if (uiState.isDownloadingReport) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        } else {
+                            Icon(Icons.Default.Download, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Haftalık PDF Raporu İndir", fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    // Diyet Listesi Yükle Button
+                    Button(
+                        onClick = {
+                            filePickerLauncher.launch("*/*")
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)), // Modern Indigo
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.Default.Upload, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Diyet Listesi Yükle (PDF/Görsel)", fontWeight = FontWeight.Bold)
+                    }
+
+                    // Action Buttons Row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Message Button
+                        var showMessageSheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                        
+                        Button(
+                            onClick = { showMessageSheet = true },
+                            modifier = Modifier.weight(1f).height(56.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F5F9)),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Icon(Icons.Default.Send, contentDescription = null, tint = primaryBlue)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Mesaj Gönder", fontWeight = FontWeight.Bold, color = primaryBlue)
+                        }
+
+                        // Diet Plan Button
+                        Button(
+                            onClick = { onCreatePlan(patient.profile.id) },
+                            modifier = Modifier.weight(1f).height(56.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Diyet Yaz", fontWeight = FontWeight.Bold)
+                        }
+                        
+                        if (showMessageSheet) {
+                            MessageBottomSheet(
+                                onDismiss = { showMessageSheet = false },
+                               onSend = { title, msg ->
+                                    viewModel.sendFeedback(token, patient.profile.id, title, msg)
+                                    showMessageSheet = false
+                                }
+                            )
+                        }
                     }
                 }
-            }
-        } else {
-             Box(modifier = Modifier.fillMaxSize().padding(innerPadding), contentAlignment = Alignment.Center) {
-                Text("Hasta verisi bulunamadı.")
+            } else {
+                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Hasta verisi bulunamadı.")
+                }
             }
         }
     }
