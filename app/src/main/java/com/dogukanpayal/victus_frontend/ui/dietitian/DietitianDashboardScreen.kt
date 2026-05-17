@@ -9,6 +9,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,13 +19,23 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dogukanpayal.victus_frontend.data.model.PatientSummary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DietitianDashboardScreen(
     viewModel: DietitianViewModel,
-    userName: String
+    userName: String,
+    token: String
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    androidx.compose.runtime.LaunchedEffect(token) {
+        if (token.isNotEmpty()) {
+            viewModel.loadPatients(token)
+        }
+    }
+
     val primaryBlue = Color(0xFF3B82F6)
     val bgGray = Color(0xFFF8FAFC)
 
@@ -55,7 +67,7 @@ fun DietitianDashboardScreen(
         ) {
             StatCard(
                 title = "Hastalarım",
-                value = "12",
+                value = uiState.patients.size.toString(),
                 icon = Icons.Default.People,
                 color = primaryBlue,
                 modifier = Modifier.weight(1f)
@@ -73,14 +85,47 @@ fun DietitianDashboardScreen(
         )
         Spacer(modifier = Modifier.height(12.dp))
         
-        repeat(5) { index ->
-            ActivityItem(
-                patientName = listOf("Ahmet", "Ayşe", "Mehmet", "Fatma", "Can")[index],
-                action = listOf("Öğün girişi yaptı", "Hedefe ulaştı", "Planı güncelledi", "Soru sordu", "Analiz tamamladı")[index],
-                time = "${(index + 1) * 10} dk önce"
+        val sortedPatients = uiState.patients.sortedWith(
+            compareByDescending<PatientSummary> { !it.lastActivity.isNullOrEmpty() }
+                .thenByDescending { it.lastActivity ?: "" }
+        )
+
+        if (sortedPatients.isEmpty()) {
+            Text(
+                text = "Henüz kayıtlı hastanız bulunmuyor.",
+                fontSize = 14.sp,
+                color = Color.Gray,
+                modifier = Modifier.padding(top = 8.dp)
             )
-            if (index < 4) Spacer(modifier = Modifier.height(12.dp))
+        } else {
+            sortedPatients.forEachIndexed { index, patient ->
+                val hasActivity = !patient.lastActivity.isNullOrEmpty()
+                ActivityItem(
+                    patientName = patient.fullName,
+                    action = if (hasActivity) (patient.lastAction ?: "Sistemde aktifti") else "Henüz bir aktivite yok",
+                    time = if (hasActivity) formatTimeAgo(patient.lastActivity!!) else "-"
+                )
+                if (index < sortedPatients.size - 1) Spacer(modifier = Modifier.height(12.dp))
+            }
         }
+    }
+}
+
+fun formatTimeAgo(isoString: String): String {
+    return try {
+        val instant = java.time.Instant.parse(isoString)
+        val now = java.time.Instant.now()
+        val duration = java.time.Duration.between(instant, now)
+        
+        when {
+            duration.toMinutes() < 1 -> "Az önce"
+            duration.toMinutes() < 60 -> "${duration.toMinutes()} dk önce"
+            duration.toHours() < 24 -> "${duration.toHours()} saat önce"
+            duration.toDays() < 30 -> "${duration.toDays()} gün önce"
+            else -> isoString.take(10) // fallback to YYYY-MM-DD
+        }
+    } catch (e: Exception) {
+        "Yakın zamanda"
     }
 }
 

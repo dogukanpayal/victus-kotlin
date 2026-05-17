@@ -13,9 +13,10 @@ import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.UUID
 
-class DietPlanRepositoryImpl(private val context: Context) : DietPlanRepository {
+class DietPlanRepositoryImpl(private val context: Context, private val userId: String = "") : DietPlanRepository {
 
-    private val prefs = context.getSharedPreferences("diet_plan_prefs", Context.MODE_PRIVATE)
+    private val prefsName = if (userId.isNotBlank()) "diet_plan_prefs_$userId" else "diet_plan_prefs"
+    private val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     private val adapter = moshi.adapter(DietPlan::class.java)
 

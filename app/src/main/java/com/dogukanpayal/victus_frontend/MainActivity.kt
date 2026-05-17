@@ -224,6 +224,8 @@ class MainActivity : ComponentActivity() {
                         val topPadding = if (showBottomBar) innerPadding.calculateTopPadding() else 0.dp
                         val bottomPadding = 0.dp
                         
+                        val currentUserId = remember { mutableStateOf(sessionManager.getUserId()) }
+
                         Box(modifier = Modifier.padding(top = topPadding, bottom = bottomPadding)) {
                             // Token geldiğinde kullanıcı bilgilerini çek
                             LaunchedEffect(setupToken.value) {
@@ -233,11 +235,13 @@ class MainActivity : ComponentActivity() {
                                         userName.value = profile.fullName ?: "İsimsiz Kullanıcı"
                                         userEmail.value = profile.email
                                         userAvatarUrl.value = profile.avatarUrl
+                                        currentUserId.value = profile.id
                                         
                                         // Rol bilgisini otomatik kaydet
                                         profile.role?.let { role ->
                                             sessionManager.saveRole(role)
                                             userRole.value = role
+                                            currentScreen.value = if (role == "dietitian") Screen.DietitianDashboard else Screen.Home
                                         }
                                     }
                                 }
@@ -246,19 +250,20 @@ class MainActivity : ComponentActivity() {
                             val loginViewModel = remember { LoginViewModel(sessionManager = sessionManager) }
                             val registerViewModel = remember { RegisterViewModel() }
                             val setupProfileViewModel = remember { SetupProfileViewModel() }
-                            val profileViewModel = remember { ProfileViewModel(sessionManager = sessionManager) }
+                            val profileViewModel = remember(setupToken.value, currentUserId.value) { ProfileViewModel(sessionManager = sessionManager) }
                             val dietitianRepository = remember { com.dogukanpayal.victus_frontend.data.repository.DietitianRepositoryImpl(com.dogukanpayal.victus_frontend.data.remote.RetrofitClient.apiService) }
-                            val dietitianViewModel = remember { DietitianViewModel(repository = dietitianRepository) }
-                            val editProfileViewModel = remember { EditProfileViewModel(context = context) }
-                            val homeViewModel = remember { HomeViewModel() }
-                            val dietPlanCreatorViewModel = remember { DietPlanCreatorViewModel(context = context) }
-                            val workoutPresetRepository = remember { WorkoutPresetRepository(context) }
-                            val dailyWorkoutRepository = remember { DailyWorkoutRepository(context) }
-                            val workoutViewModel = remember { WorkoutViewModel(workoutPresetRepository, dailyWorkoutRepository) }
-                            val exerciseViewModel = remember { ExerciseViewModel() }
-                            val dietViewModel = remember { DietViewModel() }
-                            val dietPlanViewModel = remember { DietPlanViewModel(context = context) }
-                            val scannerViewModel = remember { ScannerViewModel() }
+                            val dietitianViewModel = remember(setupToken.value, currentUserId.value) { DietitianViewModel(repository = dietitianRepository) }
+                            val editProfileViewModel = remember(setupToken.value, currentUserId.value) { EditProfileViewModel(context = context) }
+                            val homeViewModel = remember(setupToken.value, currentUserId.value) { HomeViewModel() }
+                            val dietPlanRepository = remember(setupToken.value, currentUserId.value) { com.dogukanpayal.victus_frontend.data.repository.DietPlanRepositoryImpl(context, currentUserId.value) }
+                            val dietPlanCreatorViewModel = remember(setupToken.value, currentUserId.value) { DietPlanCreatorViewModel(context = context, repository = dietPlanRepository) }
+                            val workoutPresetRepository = remember(setupToken.value, currentUserId.value) { WorkoutPresetRepository(context, currentUserId.value) }
+                            val dailyWorkoutRepository = remember(setupToken.value, currentUserId.value) { DailyWorkoutRepository(context, currentUserId.value) }
+                            val workoutViewModel = remember(setupToken.value, currentUserId.value) { WorkoutViewModel(workoutPresetRepository, dailyWorkoutRepository) }
+                            val exerciseViewModel = remember(setupToken.value, currentUserId.value) { ExerciseViewModel() }
+                            val dietViewModel = remember(setupToken.value, currentUserId.value) { DietViewModel() }
+                            val dietPlanViewModel = remember(setupToken.value, currentUserId.value) { DietPlanViewModel(context = context, repository = dietPlanRepository) }
+                            val scannerViewModel = remember(setupToken.value, currentUserId.value) { ScannerViewModel() }
 
                             val mainScreens = listOf(
                                 Screen.Scanner,
@@ -294,6 +299,7 @@ class MainActivity : ComponentActivity() {
                                     onNavigateToRegister = { currentScreen.value = Screen.Register },
                                     onNavigateToProfile = { authSession ->
                                         setupToken.value = authSession.accessToken
+                                        currentUserId.value = authSession.userId
                                         currentScreen.value = Screen.Home
                                     }
                                 )
@@ -423,7 +429,8 @@ class MainActivity : ComponentActivity() {
                                  }
                                 Screen.DietitianDashboard -> DietitianDashboardScreen(
                                     viewModel = dietitianViewModel,
-                                    userName = userName.value
+                                    userName = userName.value,
+                                    token = setupToken.value
                                 )
                                 Screen.DietitianPatients -> {
                                     LaunchedEffect(Unit) {

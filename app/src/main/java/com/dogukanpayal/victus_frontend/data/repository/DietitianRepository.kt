@@ -4,10 +4,20 @@ import com.dogukanpayal.victus_frontend.data.model.*
 import kotlinx.coroutines.delay
 import okhttp3.ResponseBody
 
+import android.content.Context
+import android.net.Uri
+
 interface DietitianRepository {
     suspend fun getPatients(token: String): Result<List<PatientSummary>>
     suspend fun getPatientDetail(token: String, patientId: String): Result<PatientDetail>
     suspend fun downloadWeeklyReport(token: String, patientId: String): Result<ResponseBody>
+    suspend fun uploadPatientDietPlan(
+        context: Context,
+        token: String,
+        patientId: String,
+        uri: Uri,
+        mimeType: String
+    ): Result<Unit>
 }
 
 class MockDietitianRepositoryImpl : DietitianRepository {
@@ -79,5 +89,16 @@ class MockDietitianRepositoryImpl : DietitianRepository {
     override suspend fun downloadWeeklyReport(token: String, patientId: String): Result<ResponseBody> {
         delay(500)
         return Result.success(ResponseBody.create(null, "Mock PDF Content"))
+    }
+
+    override suspend fun uploadPatientDietPlan(
+        context: Context,
+        token: String,
+        patientId: String,
+        uri: Uri,
+        mimeType: String
+    ): Result<Unit> {
+        delay(800)
+        return Result.success(Unit)
     }
 }

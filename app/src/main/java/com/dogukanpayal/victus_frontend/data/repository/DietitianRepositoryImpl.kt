@@ -5,6 +5,11 @@ import com.dogukanpayal.victus_frontend.data.remote.VictusApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.ResponseBody
+import android.content.Context
+import android.net.Uri
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.toRequestBody
 class DietitianRepositoryImpl(
     private val apiService: VictusApiService
 ) : DietitianRepository {
@@ -16,19 +21,16 @@ class DietitianRepositoryImpl(
                 val profiles = response.body() ?: emptyList()
                 val patients = profiles.map { profile ->
                     // Format date if needed, or use as is
-                    val formattedDate = profile.lastActivity?.let {
-                        if (it.contains("T")) it.split("T")[0] else it
-                    } ?: "Aktivite yok"
-
                     PatientSummary(
                         id = profile.id,
                         fullName = profile.fullName,
                         email = profile.email,
                         avatarUrl = profile.avatarUrl,
                         goal = profile.goal,
-                        lastActivity = formattedDate,
+                        lastActivity = profile.lastActivity,
+                        lastAction = profile.lastAction,
                         activePlanTitle = profile.activePlanTitle ?: "Aktif plan yok",
-                        complianceRate = 0 // Feature not yet implemented
+                        complianceRate = profile.complianceRate ?: 0
                     )
                 }
                 Result.success(patients)
@@ -66,6 +68,36 @@ class DietitianRepositoryImpl(
                 Result.success(response.body()!!)
             } else {
                 Result.failure(Exception("Rapor indirilemedi: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun uploadPatientDietPlan(
+        context: Context,
+        token: String,
+        patientId: String,
+        uri: Uri,
+        mimeType: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val fileBytes = inputStream?.use { it.readBytes() } ?: throw Exception("Dosya okunamadı")
+
+            val requestFile = fileBytes.toRequestBody(mimeType.toMediaTypeOrNull())
+            val filePart = MultipartBody.Part.createFormData("file", "diet_plan", requestFile)
+            
+            val startDatePart = java.time.LocalDate.now().toString().toRequestBody("text/plain".toMediaTypeOrNull())
+            val activatePart = "true".toRequestBody("text/plain".toMediaTypeOrNull())
+
+            val response = apiService.uploadPatientDietPlan("Bearer $token", patientId, filePart, startDatePart, activatePart)
+
+            if (response.isSuccessful && response.body()?.success == true) {
+                Result.success(Unit)
+            } else {
+                val errorMsg = response.body()?.message ?: "Sunucu hatası: ${response.code()}"
+                Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {
             Result.failure(e)

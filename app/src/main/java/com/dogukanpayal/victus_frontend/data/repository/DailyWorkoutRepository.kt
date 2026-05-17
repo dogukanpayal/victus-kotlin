@@ -5,8 +5,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class DailyWorkoutRepository(context: Context) {
-    private val prefs = context.getSharedPreferences("daily_workout_prefs", Context.MODE_PRIVATE)
+class DailyWorkoutRepository(context: Context, private val userId: String) {
+    private val prefsName = if (userId.isNotBlank()) "daily_workout_prefs_$userId" else "daily_workout_prefs"
+    private val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
 
     companion object {
         private const val KEY_ACTIVE_PRESET_IDS = "active_preset_ids"

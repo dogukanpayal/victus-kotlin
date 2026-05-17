@@ -8,6 +8,7 @@ data class PatientSummary(
     val email: String,
     val avatarUrl: String? = null,
     val lastActivity: String? = null,
+    val lastAction: String? = null,
     val goal: String? = null,
     val activePlanTitle: String? = null,
     val complianceRate: Int = 0 // Percentage 0-100
@@ -47,5 +48,7 @@ data class PatientSummaryResponse(
     val goal: String? = null,
     @Json(name = "avatar_url") val avatarUrl: String? = null,
     @Json(name = "active_plan_title") val activePlanTitle: String?,
-    @Json(name = "last_activity") val lastActivity: String?
+    @Json(name = "last_activity") val lastActivity: String?,
+    @Json(name = "last_action") val lastAction: String?,
+    @Json(name = "compliance_rate") val complianceRate: Int?
 )

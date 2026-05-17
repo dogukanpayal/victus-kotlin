@@ -6,8 +6,9 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
-class WorkoutPresetRepository(context: Context) {
-    private val prefs = context.getSharedPreferences("workout_presets", Context.MODE_PRIVATE)
+class WorkoutPresetRepository(context: Context, private val userId: String) {
+    private val prefsName = if (userId.isNotBlank()) "workout_presets_$userId" else "workout_presets"
+    private val prefs = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE)
     private val moshi = Moshi.Builder().add(KotlinJsonAdapterFactory()).build()
     private val type = Types.newParameterizedType(List::class.java, WorkoutPreset::class.java)
     private val adapter = moshi.adapter<List<WorkoutPreset>>(type)

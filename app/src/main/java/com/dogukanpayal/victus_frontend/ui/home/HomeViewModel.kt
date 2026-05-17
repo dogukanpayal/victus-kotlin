@@ -52,7 +52,8 @@ class HomeViewModel : ViewModel() {
             // Fetch Feedbacks
             val feedbackResult = feedbackRepository.getFeedbacks(token)
             feedbackResult.onSuccess { feedbacks ->
-                _uiState.update { it.copy(feedbacks = feedbacks) }
+                val filteredFeedbacks = feedbacks.filter { it.senderType == "dietitian" }
+                _uiState.update { it.copy(feedbacks = filteredFeedbacks) }
             }
         }
     }

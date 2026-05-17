@@ -153,6 +153,16 @@ interface VictusApiService {
         @Path("id") patientId: String
     ): Response<DietitianPatientDetailResponse>
 
+    @Multipart
+    @POST("v1/dietitian/patients/{patient_id}/diet/upload")
+    suspend fun uploadPatientDietPlan(
+        @Header("Authorization") token: String,
+        @Path("patient_id") patientId: String,
+        @Part file: MultipartBody.Part,
+        @Part("start_date") startDate: RequestBody,
+        @Part("activate") activate: RequestBody
+    ): Response<ParseDietResponse>
+
     // Feedback Endpoints
     @GET("v1/user/feedbacks")
     suspend fun getFeedbacks(

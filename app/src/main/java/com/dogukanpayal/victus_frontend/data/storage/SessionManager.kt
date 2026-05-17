@@ -8,7 +8,7 @@ import android.content.SharedPreferences
  * "Beni Hatırla" seçiliyken token SharedPreferences'a kaydedilir.
  * Uygulama kapatılıp açıldığında token hâlâ varsa login atlanır.
  */
-class SessionManager(context: Context) {
+class SessionManager(private val context: Context) {
 
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
@@ -16,14 +16,16 @@ class SessionManager(context: Context) {
     companion object {
         private const val PREF_NAME = "victus_session"
         private const val KEY_TOKEN = "access_token"
+        private const val KEY_USER_ID = "user_id"
         private const val KEY_REMEMBER_ME = "remember_me"
         private const val KEY_ROLE = "user_role"
     }
 
-    /** Token'ı kalıcı olarak kaydeder (rememberMe = true ise). */
-    fun saveSession(token: String) {
+    /** Token'ı ve Kullanıcı ID'sini kalıcı olarak kaydeder (rememberMe = true ise). */
+    fun saveSession(token: String, userId: String) {
         prefs.edit()
             .putString(KEY_TOKEN, token)
+            .putString(KEY_USER_ID, userId)
             .putBoolean(KEY_REMEMBER_ME, true)
             .apply()
     }
@@ -34,6 +36,11 @@ class SessionManager(context: Context) {
         if (!remembered) return null
         val token = prefs.getString(KEY_TOKEN, null)
         return if (token.isNullOrBlank()) null else token
+    }
+
+    /** Kaydedilmiş kullanıcı ID'sini döner. */
+    fun getUserId(): String {
+        return prefs.getString(KEY_USER_ID, "") ?: ""
     }
 
     /** Oturumu temizler (logout veya rememberMe kapalıyken). */

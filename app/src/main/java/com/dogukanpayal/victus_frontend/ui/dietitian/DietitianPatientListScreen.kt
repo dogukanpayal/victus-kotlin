@@ -55,6 +55,8 @@ fun DietitianPatientListScreen(
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
             shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
                 focusedBorderColor = primaryBlue,
                 unfocusedBorderColor = Color(0xFFE2E8F0),
                 focusedContainerColor = Color.White,

@@ -121,6 +121,16 @@ fun DietitianPatientDetailScreen(
 
                 // Weekly Report Button
                 val context = androidx.compose.ui.platform.LocalContext.current
+
+                val filePickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+                    contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+                ) { uri: android.net.Uri? ->
+                    uri?.let {
+                        val contentResolver = context.contentResolver
+                        val mimeType = contentResolver.getType(it) ?: "application/pdf"
+                        viewModel.uploadPatientDietPlan(context, token, patient.profile.id, it, mimeType)
+                    }
+                }
                 
                 LaunchedEffect(uiState.reportDownloadSuccessMessage, uiState.reportDownloadError) {
                     uiState.reportDownloadSuccessMessage?.let {
@@ -154,6 +164,20 @@ fun DietitianPatientDetailScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Haftalık PDF Raporu İndir", fontWeight = FontWeight.Bold)
                     }
+                }
+
+                // Diyet Listesi Yükle Button
+                Button(
+                    onClick = {
+                        filePickerLauncher.launch("*/*")
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)), // Modern Indigo
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.Default.Upload, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Diyet Listesi Yükle (PDF/Görsel)", fontWeight = FontWeight.Bold)
                 }
 
                 // Action Buttons Row

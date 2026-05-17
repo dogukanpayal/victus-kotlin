@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 import android.content.Context
 import android.content.ContentValues
 import android.os.Build
+import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 import java.io.File
@@ -179,5 +180,24 @@ class DietitianViewModel(
 
     fun clearState() {
         _uiState.value = DietitianUiState()
+    }
+
+    fun uploadPatientDietPlan(
+        context: Context,
+        token: String,
+        patientId: String,
+        uri: Uri,
+        mimeType: String
+    ) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+            val result = repository.uploadPatientDietPlan(context, token, patientId, uri, mimeType)
+            result.onSuccess {
+                // Reload patient details to update the active diet plan summary instantly!
+                loadPatientDetail(token, patientId)
+            }.onFailure { e ->
+                _uiState.update { it.copy(isLoading = false, error = "Diyet yüklenemedi: ${e.message}") }
+            }
+        }
     }
 }

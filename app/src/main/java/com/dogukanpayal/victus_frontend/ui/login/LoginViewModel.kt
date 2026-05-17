@@ -64,7 +64,7 @@ class LoginViewModel(
                 _accessToken.value = authSession.accessToken
                 // Beni Hatırla seçiliyse token'ı kalıcı kaydet
                 if (_rememberMe.value) {
-                    sessionManager?.saveSession(authSession.accessToken)
+                    sessionManager?.saveSession(authSession.accessToken, authSession.userId)
                 } else {
                     sessionManager?.clearSession()
                 }
