@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,6 +25,7 @@ import com.dogukanpayal.victus_frontend.ui.dietitian.components.CompliancePieCha
 @Composable
 fun DietitianPatientDetailScreen(
     viewModel: DietitianViewModel,
+    token: String,
     onNavigateBack: () -> Unit,
     onCreatePlan: (String) -> Unit
 ) {
@@ -116,16 +118,46 @@ fun DietitianPatientDetailScreen(
                     color = Color(0xFFEAB308)
                 )
 
-                // Action Button
-                Button(
-                    onClick = { onCreatePlan(patient.profile.id) },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
-                    shape = RoundedCornerShape(16.dp)
+                // Action Buttons Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Yeni Diyet Planı Oluştur", fontWeight = FontWeight.Bold)
+                    // Message Button
+                    var showMessageSheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                    
+                    Button(
+                        onClick = { showMessageSheet = true },
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF1F5F9)),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.Default.Send, contentDescription = null, tint = primaryBlue)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Mesaj Gönder", fontWeight = FontWeight.Bold, color = primaryBlue)
+                    }
+
+                    // Diet Plan Button
+                    Button(
+                        onClick = { onCreatePlan(patient.profile.id) },
+                        modifier = Modifier.weight(1f).height(56.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = primaryBlue),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Diyet Yaz", fontWeight = FontWeight.Bold)
+                    }
+                    
+                    if (showMessageSheet) {
+                        MessageBottomSheet(
+                            onDismiss = { showMessageSheet = false },
+                            onSend = { title, msg ->
+                                viewModel.sendFeedback(token, patient.profile.id, title, msg)
+                                showMessageSheet = false
+                            }
+                        )
+                    }
                 }
             }
         } else {
@@ -166,6 +198,57 @@ fun MetricBox(label: String, value: String, modifier: Modifier) {
         Column(modifier = Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(label, fontSize = 11.sp, color = Color(0xFF64748B))
             Text(value, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1E293B))
+        }
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MessageBottomSheet(
+    onDismiss: () -> Unit,
+    onSend: (String, String) -> Unit
+) {
+    var title by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var message by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .fillMaxWidth()
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text("Mesaj Gönder", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Konu") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+            
+            OutlinedTextField(
+                value = message,
+                onValueChange = { message = it },
+                label = { Text("Mesajınız") },
+                modifier = Modifier.fillMaxWidth().height(120.dp),
+                shape = RoundedCornerShape(12.dp)
+            )
+            
+            Button(
+                onClick = { if (title.isNotEmpty() && message.isNotEmpty()) onSend(title, message) },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3B82F6)),
+                shape = RoundedCornerShape(16.dp),
+                enabled = title.isNotEmpty() && message.isNotEmpty()
+            ) {
+                Text("Gönder", fontWeight = FontWeight.Bold)
+            }
         }
     }
 }

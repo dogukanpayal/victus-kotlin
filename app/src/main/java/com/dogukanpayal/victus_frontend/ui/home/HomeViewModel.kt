@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dogukanpayal.victus_frontend.data.model.NutritionUiState
 import com.dogukanpayal.victus_frontend.data.repository.NutritionRepositoryImpl
+import com.dogukanpayal.victus_frontend.data.repository.FeedbackRepositoryImpl
+import com.dogukanpayal.victus_frontend.data.remote.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,6 +19,7 @@ class HomeViewModel : ViewModel() {
     val uiState: StateFlow<NutritionUiState> = _uiState.asStateFlow()
 
     private val nutritionRepository = NutritionRepositoryImpl()
+    private val feedbackRepository = FeedbackRepositoryImpl(RetrofitClient.apiService)
 
     fun loadDailySummary(token: String) {
         viewModelScope.launch {
@@ -44,6 +47,24 @@ class HomeViewModel : ViewModel() {
             } ?: run {
                 val errorMessage = result.exceptionOrNull()?.message ?: "Bilinmeyen bir hata oluştu"
                 _uiState.update { it.copy(isLoading = false, error = errorMessage) }
+            }
+
+            // Fetch Feedbacks
+            val feedbackResult = feedbackRepository.getFeedbacks(token)
+            feedbackResult.onSuccess { feedbacks ->
+                _uiState.update { it.copy(feedbacks = feedbacks) }
+            }
+        }
+    }
+
+    fun markFeedbackAsRead(token: String, feedbackId: String) {
+        viewModelScope.launch {
+            feedbackRepository.markAsRead(token, feedbackId).onSuccess {
+                _uiState.update { state ->
+                    state.copy(feedbacks = state.feedbacks.map { 
+                        if (it.id == feedbackId) it.copy(isRead = true) else it 
+                    })
+                }
             }
         }
     }

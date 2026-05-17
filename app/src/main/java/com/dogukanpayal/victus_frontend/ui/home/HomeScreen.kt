@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.dogukanpayal.victus_frontend.data.model.FeedbackMessage
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -141,6 +142,18 @@ fun HomeScreen(viewModel: HomeViewModel, token: String = "") {
             lightGreenBg = Color(0xFFF0FDF4)
         )
 
+        if (uiState.feedbacks.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(24.dp))
+            FeedbackSection(
+                feedbacks = uiState.feedbacks,
+                onFeedbackClick = { feedback ->
+                    if (!feedback.isRead) {
+                        viewModel.markFeedbackAsRead(token, feedback.id)
+                    }
+                }
+            )
+        }
+        
         Spacer(modifier = Modifier.height(24.dp))
 
         // Daily Step Goal Card
@@ -431,3 +444,111 @@ fun WeeklyActivityChart(primaryGreen: Color) {
     }
 }
 
+@Composable
+fun FeedbackSection(
+    feedbacks: List<FeedbackMessage>,
+    onFeedbackClick: (FeedbackMessage) -> Unit
+) {
+    Column {
+        Text(
+            text = "Gelen Kutusu",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF0F172A)
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        
+        androidx.compose.foundation.lazy.LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            items(feedbacks.size) { index ->
+                FeedbackCard(
+                    feedback = feedbacks[index],
+                    onClick = { onFeedbackClick(feedbacks[index]) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun FeedbackCard(
+    feedback: FeedbackMessage,
+    onClick: () -> Unit
+) {
+    val isAI = feedback.senderType == "ai"
+    val containerColor = if (isAI) Color(0xFFF0FDF4) else Color(0xFFF0F9FF)
+    val contentColor = if (isAI) Color(0xFF166534) else Color(0xFF075985)
+    val borderColor = if (isAI) Color(0xFFBBF7D0) else Color(0xFFBAE6FD)
+    
+    Card(
+        modifier = Modifier
+            .width(280.dp)
+            .border(1.dp, borderColor, RoundedCornerShape(24.dp))
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = if (isAI) Icons.Default.Star else Icons.Default.Face,
+                        contentDescription = null,
+                        tint = contentColor,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (isAI) "YAPAY ZEKA" else "DİYETİSYEN",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = contentColor,
+                        letterSpacing = 1.sp
+                    )
+                }
+                if (!feedback.isRead) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(Color.Red)
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Text(
+                text = feedback.title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF0F172A)
+            )
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            Text(
+                text = feedback.message,
+                fontSize = 14.sp,
+                color = Color(0xFF475569),
+                maxLines = 3,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Text(
+                text = feedback.createdAt.split("T")[0],
+                fontSize = 12.sp,
+                color = Color(0xFF94A3B8)
+            )
+        }
+    }
+}

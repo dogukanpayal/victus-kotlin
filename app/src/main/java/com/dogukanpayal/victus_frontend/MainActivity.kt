@@ -440,6 +440,7 @@ class MainActivity : ComponentActivity() {
                                 }
                                 Screen.DietitianPatientDetail -> DietitianPatientDetailScreen(
                                     viewModel = dietitianViewModel,
+                                    token = setupToken.value,
                                     onNavigateBack = { currentScreen.value = Screen.DietitianPatients },
                                     onCreatePlan = { patientId ->
                                         currentPatientIdForPlan.value = patientId

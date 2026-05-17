@@ -4,7 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dogukanpayal.victus_frontend.data.model.PatientDetail
 import com.dogukanpayal.victus_frontend.data.model.PatientSummary
+import com.dogukanpayal.victus_frontend.data.model.SendFeedbackRequest
 import com.dogukanpayal.victus_frontend.data.repository.DietitianRepository
+import com.dogukanpayal.victus_frontend.data.repository.FeedbackRepository
+import com.dogukanpayal.victus_frontend.data.repository.FeedbackRepositoryImpl
+import com.dogukanpayal.victus_frontend.data.remote.RetrofitClient
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -21,7 +25,8 @@ data class DietitianUiState(
 )
 
 class DietitianViewModel(
-    private val repository: DietitianRepository
+    private val repository: DietitianRepository,
+    private val feedbackRepository: FeedbackRepository = FeedbackRepositoryImpl(RetrofitClient.apiService)
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DietitianUiState())
@@ -67,6 +72,17 @@ class DietitianViewModel(
                 _uiState.update { it.copy(selectedPatient = detail, isLoading = false) }
             }.onFailure { e ->
                 _uiState.update { it.copy(isLoading = false, error = e.message) }
+            }
+        }
+    }
+
+    fun sendFeedback(token: String, patientId: String, title: String, message: String) {
+        viewModelScope.launch {
+            val request = SendFeedbackRequest(patientId, title, message)
+            feedbackRepository.sendFeedback(token, request).onSuccess {
+                // Success, could update UI with a toast or state
+            }.onFailure {
+                // Handle error
             }
         }
     }

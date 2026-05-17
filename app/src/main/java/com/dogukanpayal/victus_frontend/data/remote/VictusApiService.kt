@@ -151,4 +151,22 @@ interface VictusApiService {
         @Header("Authorization") token: String,
         @Path("id") patientId: String
     ): Response<DietitianPatientDetailResponse>
+
+    // Feedback Endpoints
+    @GET("v1/user/feedbacks")
+    suspend fun getFeedbacks(
+        @Header("Authorization") token: String
+    ): Response<List<FeedbackMessage>>
+
+    @POST("v1/user/feedbacks/{id}/read")
+    suspend fun markFeedbackAsRead(
+        @Header("Authorization") token: String,
+        @Path("id") feedbackId: String
+    ): Response<Unit>
+
+    @POST("v1/dietitian/feedbacks")
+    suspend fun sendFeedback(
+        @Header("Authorization") token: String,
+        @Body request: SendFeedbackRequest
+    ): Response<FeedbackMessage>
 }
