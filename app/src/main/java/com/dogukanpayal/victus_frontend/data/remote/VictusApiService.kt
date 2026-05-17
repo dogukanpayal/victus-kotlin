@@ -3,6 +3,7 @@ package com.dogukanpayal.victus_frontend.data.remote
 import com.dogukanpayal.victus_frontend.data.model.*
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -169,4 +170,11 @@ interface VictusApiService {
         @Header("Authorization") token: String,
         @Body request: SendFeedbackRequest
     ): Response<FeedbackMessage>
+
+    @Streaming
+    @GET("v1/report/weekly/{patient_id}")
+    suspend fun downloadWeeklyReport(
+        @Header("Authorization") token: String,
+        @Path("patient_id") patientId: String
+    ): Response<ResponseBody>
 }

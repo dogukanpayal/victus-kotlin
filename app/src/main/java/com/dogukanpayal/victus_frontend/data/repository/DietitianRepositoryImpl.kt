@@ -4,6 +4,7 @@ import com.dogukanpayal.victus_frontend.data.model.*
 import com.dogukanpayal.victus_frontend.data.remote.VictusApiService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.ResponseBody
 class DietitianRepositoryImpl(
     private val apiService: VictusApiService
 ) : DietitianRepository {
@@ -52,6 +53,19 @@ class DietitianRepositoryImpl(
                 ))
             } else {
                 Result.failure(Exception("Hasta detayı getirilemedi: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun downloadWeeklyReport(token: String, patientId: String): Result<ResponseBody> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.downloadWeeklyReport("Bearer $token", patientId)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("Rapor indirilemedi: ${response.code()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

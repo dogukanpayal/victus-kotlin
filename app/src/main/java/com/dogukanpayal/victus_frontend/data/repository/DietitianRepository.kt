@@ -2,10 +2,12 @@ package com.dogukanpayal.victus_frontend.data.repository
 
 import com.dogukanpayal.victus_frontend.data.model.*
 import kotlinx.coroutines.delay
+import okhttp3.ResponseBody
 
 interface DietitianRepository {
     suspend fun getPatients(token: String): Result<List<PatientSummary>>
     suspend fun getPatientDetail(token: String, patientId: String): Result<PatientDetail>
+    suspend fun downloadWeeklyReport(token: String, patientId: String): Result<ResponseBody>
 }
 
 class MockDietitianRepositoryImpl : DietitianRepository {
@@ -72,5 +74,10 @@ class MockDietitianRepositoryImpl : DietitianRepository {
             activeDietPlanSummary = "Haftalık Definasyon Planı (2100 kcal, %40 Protein)",
             recentWorkoutSummary = "Dün: 45 dk Kardiyo, 350 kcal yakıldı"
         ))
+    }
+
+    override suspend fun downloadWeeklyReport(token: String, patientId: String): Result<ResponseBody> {
+        delay(500)
+        return Result.success(ResponseBody.create(null, "Mock PDF Content"))
     }
 }

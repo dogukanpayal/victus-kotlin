@@ -14,6 +14,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import android.content.Context
+import android.content.ContentValues
+import android.os.Build
+import android.os.Environment
+import android.provider.MediaStore
+import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 data class DietitianUiState(
     val patients: List<PatientSummary> = emptyList(),
@@ -21,7 +31,10 @@ data class DietitianUiState(
     val selectedPatient: PatientDetail? = null,
     val isLoading: Boolean = false,
     val searchQuery: String = "",
-    val error: String? = null
+    val error: String? = null,
+    val isDownloadingReport: Boolean = false,
+    val reportDownloadSuccessMessage: String? = null,
+    val reportDownloadError: String? = null
 )
 
 class DietitianViewModel(
@@ -85,6 +98,83 @@ class DietitianViewModel(
                 // Handle error
             }
         }
+    }
+
+    fun downloadWeeklyReport(token: String, patientId: String, patientName: String, context: Context) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDownloadingReport = true, reportDownloadSuccessMessage = null, reportDownloadError = null) }
+            val result = repository.downloadWeeklyReport(token, patientId)
+            result.onSuccess { responseBody ->
+                val success = withContext(Dispatchers.IO) {
+                    savePdfToDownloads(responseBody.byteStream(), patientName, context)
+                }
+                if (success) {
+                    _uiState.update { it.copy(
+                        isDownloadingReport = false,
+                        reportDownloadSuccessMessage = "Rapor başarıyla İndirilenler (Downloads) klasörüne kaydedildi."
+                    )}
+                } else {
+                    _uiState.update { it.copy(
+                        isDownloadingReport = false,
+                        reportDownloadError = "Dosya kaydedilirken bir hata oluştu."
+                    )}
+                }
+            }.onFailure { e ->
+                _uiState.update { it.copy(
+                    isDownloadingReport = false,
+                    reportDownloadError = "Rapor indirilemedi: ${e.message}"
+                )}
+            }
+        }
+    }
+
+    private fun savePdfToDownloads(
+        inputStream: InputStream,
+        patientName: String,
+        context: Context
+    ): Boolean {
+        val fileName = "Victus_Haftalik_Rapor_${patientName.replace(" ", "_")}.pdf"
+        
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val resolver = context.contentResolver
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                }
+                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                if (uri != null) {
+                    resolver.openOutputStream(uri)?.use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                    true
+                } else {
+                    false
+                }
+            } else {
+                val targetDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                if (!targetDir.exists()) {
+                    targetDir.mkdirs()
+                }
+                val file = File(targetDir, fileName)
+                FileOutputStream(file).use { outputStream ->
+                    inputStream.copyTo(outputStream)
+                }
+                true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        } finally {
+            try {
+                inputStream.close()
+            } catch (ignored: Exception) {}
+        }
+    }
+
+    fun clearReportDownloadStatus() {
+        _uiState.update { it.copy(reportDownloadSuccessMessage = null, reportDownloadError = null) }
     }
 
     fun clearState() {

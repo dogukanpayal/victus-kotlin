@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -117,6 +118,43 @@ fun DietitianPatientDetailScreen(
                     icon = Icons.Default.FitnessCenter,
                     color = Color(0xFFEAB308)
                 )
+
+                // Weekly Report Button
+                val context = androidx.compose.ui.platform.LocalContext.current
+                
+                LaunchedEffect(uiState.reportDownloadSuccessMessage, uiState.reportDownloadError) {
+                    uiState.reportDownloadSuccessMessage?.let {
+                        android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
+                        viewModel.clearReportDownloadStatus()
+                    }
+                    uiState.reportDownloadError?.let {
+                        android.widget.Toast.makeText(context, it, android.widget.Toast.LENGTH_LONG).show()
+                        viewModel.clearReportDownloadStatus()
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        viewModel.downloadWeeklyReport(
+                            token = token,
+                            patientId = patient.profile.id,
+                            patientName = patient.profile.fullName ?: "Hasta",
+                            context = context
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                    shape = RoundedCornerShape(16.dp),
+                    enabled = !uiState.isDownloadingReport
+                ) {
+                    if (uiState.isDownloadingReport) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Icon(Icons.Default.Download, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Haftalık PDF Raporu İndir", fontWeight = FontWeight.Bold)
+                    }
+                }
 
                 // Action Buttons Row
                 Row(
