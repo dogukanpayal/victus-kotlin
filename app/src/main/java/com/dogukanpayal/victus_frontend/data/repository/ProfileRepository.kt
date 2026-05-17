@@ -20,6 +20,11 @@ interface ProfileRepository {
     suspend fun getProfile(
         accessToken: String
     ): Result<ProfileResponse>
+
+    suspend fun linkDietitian(
+        accessToken: String,
+        code: String
+    ): Result<Unit>
 }
 
 class ProfileRepositoryImpl(
@@ -75,6 +80,26 @@ class ProfileRepositoryImpl(
                 Result.success(response.body()!!)
             } else {
                 val errorMsg = response.errorBody()?.string() ?: "Profile fetch failed"
+                Result.failure(Exception(errorMsg))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun linkDietitian(
+        accessToken: String,
+        code: String
+    ): Result<Unit> {
+        return try {
+            val request = LinkDietitianRequest(code = code)
+            val authHeader = "Bearer $accessToken"
+            val response = apiService.linkDietitian(authHeader, request)
+
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val errorMsg = response.errorBody()?.string() ?: "Bağlantı işlemi başarısız oldu."
                 Result.failure(Exception(errorMsg))
             }
         } catch (e: Exception) {

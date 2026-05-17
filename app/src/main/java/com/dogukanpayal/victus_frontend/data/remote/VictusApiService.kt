@@ -199,4 +199,10 @@ interface VictusApiService {
         @Header("Authorization") token: String,
         @Query("date") date: String? = null
     ): Response<DailyWaterResponse>
+
+    @POST("v1/patient/link-dietitian")
+    suspend fun linkDietitian(
+        @Header("Authorization") token: String,
+        @Body request: com.dogukanpayal.victus_frontend.data.model.LinkDietitianRequest
+    ): Response<Unit>
 }

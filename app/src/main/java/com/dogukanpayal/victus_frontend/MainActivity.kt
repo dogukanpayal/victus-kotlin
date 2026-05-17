@@ -56,7 +56,8 @@ import com.dogukanpayal.victus_frontend.ui.components.DietitianBottomNavigation
 enum class Screen { 
     Login, Register, SetupProfile, Profile, EditProfile, 
     Home, Workout, Exercise, Diet, Scanner, DietPlanCreator,
-    DietitianDashboard, DietitianPatients, DietitianPatientDetail
+    DietitianDashboard, DietitianPatients, DietitianPatientDetail,
+    LinkDietitian
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -147,6 +148,7 @@ class MainActivity : ComponentActivity() {
                     Screen.DietitianDashboard -> "Panel"
                     Screen.DietitianPatients -> "Hastalarım"
                     Screen.DietitianPatientDetail -> "Hasta Detayı"
+                    Screen.LinkDietitian -> "Diyetisyene Bağlan"
                     else -> ""
                 }
 
@@ -163,6 +165,10 @@ class MainActivity : ComponentActivity() {
                                 onSettingsClick = {
                                     scope.launch { drawerState.close() }
                                     currentScreen.value = Screen.Profile
+                                },
+                                onLinkDietitianClick = {
+                                    scope.launch { drawerState.close() }
+                                    currentScreen.value = Screen.LinkDietitian
                                 },
                                 onLogoutClick = {
                                     scope.launch { drawerState.close() }
@@ -264,6 +270,7 @@ class MainActivity : ComponentActivity() {
                             val dietViewModel = remember(setupToken.value, currentUserId.value) { DietViewModel() }
                             val dietPlanViewModel = remember(setupToken.value, currentUserId.value) { DietPlanViewModel(context = context, repository = dietPlanRepository) }
                             val scannerViewModel = remember(setupToken.value, currentUserId.value) { ScannerViewModel() }
+                            val linkDietitianViewModel = remember(setupToken.value, currentUserId.value) { com.dogukanpayal.victus_frontend.ui.dietitian_link.LinkDietitianViewModel(profileRepository) }
 
                             val mainScreens = listOf(
                                 Screen.Scanner,
@@ -456,6 +463,14 @@ class MainActivity : ComponentActivity() {
                                         currentScreen.value = Screen.DietPlanCreator
                                     }
                                 )
+                                Screen.LinkDietitian -> {
+                                    com.dogukanpayal.victus_frontend.ui.dietitian_link.LinkDietitianScreen(
+                                        viewModel = linkDietitianViewModel,
+                                        token = setupToken.value,
+                                        onNavigateBack = { currentScreen.value = Screen.Home },
+                                        onNavigateToHome = { currentScreen.value = Screen.Home }
+                                    )
+                                }
                             }
                         }
                     }

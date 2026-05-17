@@ -9,6 +9,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,6 +30,7 @@ fun MainDrawerContent(
     userAvatarUrl: String? = null,
     onNotificationsClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onLinkDietitianClick: () -> Unit,
     onLogoutClick: () -> Unit
 ) {
     val primaryGreen = Color(0xFF22C55E)
@@ -104,6 +106,14 @@ fun MainDrawerContent(
             iconColor = inactiveGray,
             containerColor = Color.Transparent,
             onClick = onSettingsClick
+        )
+
+        DrawerMenuItem(
+            label = "Diyetisyene Bağlan",
+            icon = Icons.Default.Link,
+            iconColor = inactiveGray,
+            containerColor = Color.Transparent,
+            onClick = onLinkDietitianClick
         )
 
         Spacer(modifier = Modifier.weight(1f))

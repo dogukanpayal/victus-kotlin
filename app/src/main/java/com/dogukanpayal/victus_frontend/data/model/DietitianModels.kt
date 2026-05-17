@@ -54,3 +54,7 @@ data class PatientSummaryResponse(
     @Json(name = "last_action") val lastAction: String?,
     @Json(name = "compliance_rate") val complianceRate: Int?
 )
+
+data class LinkDietitianRequest(
+    val code: String
+)
