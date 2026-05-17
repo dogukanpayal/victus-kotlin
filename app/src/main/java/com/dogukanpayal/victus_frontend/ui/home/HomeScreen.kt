@@ -124,10 +124,12 @@ fun HomeScreen(viewModel: HomeViewModel, token: String = "") {
 
         // Water Consumption Card
         WaterConsumptionCard(
-            value = "1.5 L",
-            target = "2.5 L",
+            value = "${uiState.waterConsumedMl / 1000.0} L",
+            target = "${uiState.waterTargetMl / 1000.0} L",
             primaryGreen = primaryGreen,
-            lightGreenBg = Color(0xFFF0FDF4)
+            lightGreenBg = Color(0xFFF0FDF4),
+            isAdding = uiState.isAddingWater,
+            onAddWater = { viewModel.addWater(token) }
         )
 
         if (uiState.feedbacks.isNotEmpty()) {
@@ -215,7 +217,9 @@ fun WaterConsumptionCard(
     value: String,
     target: String,
     primaryGreen: Color,
-    lightGreenBg: Color
+    lightGreenBg: Color,
+    isAdding: Boolean,
+    onAddWater: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -279,15 +283,23 @@ fun WaterConsumptionCard(
                     .size(56.dp)
                     .clip(CircleShape)
                     .background(lightGreenBg)
-                    .clickable { /* Increase water */ },
+                    .clickable(enabled = !isAdding) { onAddWater() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Water",
-                    tint = primaryGreen,
-                    modifier = Modifier.size(28.dp)
-                )
+                if (isAdding) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = primaryGreen,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Water",
+                        tint = primaryGreen,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
         }
     }

@@ -20,7 +20,8 @@ data class PatientDetail(
     val activePlan: ActivePlanResponse? = null,
     val activeDietPlanSummary: String? = null,
     val recentWorkoutSummary: String? = null,
-    val complianceSummary: ComplianceSummary? = null
+    val complianceSummary: ComplianceSummary? = null,
+    val waterSummary: DailyWaterResponse? = null
 )
 
 data class ComplianceSummary(
@@ -38,7 +39,8 @@ data class DietitianPatientDetailResponse(
     val profile: ProfileResponse,
     @Json(name = "active_diet_plan_summary") val activeDietPlanSummary: String?,
     @Json(name = "recent_workout_summary") val recentWorkoutSummary: String?,
-    @Json(name = "compliance_summary") val complianceSummary: ComplianceSummary?
+    @Json(name = "compliance_summary") val complianceSummary: ComplianceSummary?,
+    @Json(name = "water_summary") val waterSummary: DailyWaterResponse?
 )
 
 data class PatientSummaryResponse(

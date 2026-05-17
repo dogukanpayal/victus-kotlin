@@ -20,6 +20,7 @@ class HomeViewModel : ViewModel() {
 
     private val nutritionRepository = NutritionRepositoryImpl()
     private val feedbackRepository = FeedbackRepositoryImpl(RetrofitClient.apiService)
+    private val waterRepository = com.dogukanpayal.victus_frontend.data.repository.WaterRepositoryImpl()
 
     fun loadDailySummary(token: String) {
         viewModelScope.launch {
@@ -54,6 +55,30 @@ class HomeViewModel : ViewModel() {
             feedbackResult.onSuccess { feedbacks ->
                 val filteredFeedbacks = feedbacks.filter { it.senderType == "dietitian" }
                 _uiState.update { it.copy(feedbacks = filteredFeedbacks) }
+            }
+
+            // Fetch Water
+            val waterResult = waterRepository.getDailyWater(token, today)
+            waterResult.onSuccess { water ->
+                _uiState.update { it.copy(
+                    waterConsumedMl = water.totalMl,
+                    waterTargetMl = water.targetMl
+                ) }
+            }
+        }
+    }
+
+    fun addWater(token: String, amountMl: Int = 250) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isAddingWater = true) }
+            val result = waterRepository.addWater(token, amountMl)
+            result.onSuccess { response ->
+                _uiState.update { it.copy(
+                    waterConsumedMl = response.dailyTotalMl,
+                    isAddingWater = false
+                ) }
+            }.onFailure {
+                _uiState.update { it.copy(isAddingWater = false) }
             }
         }
     }

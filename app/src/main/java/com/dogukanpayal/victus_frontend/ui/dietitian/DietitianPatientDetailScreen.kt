@@ -134,6 +134,14 @@ fun DietitianPatientDetailScreen(
                         color = Color(0xFF22C55E)
                     )
 
+                    // [NEW] Water Consumption
+                    SummaryCard(
+                        title = "Su Tüketimi",
+                        content = "${patient.waterSummary?.totalMl ?: 0} ml / ${patient.waterSummary?.targetMl ?: 2500} ml",
+                        icon = Icons.Default.Call,
+                        color = Color(0xFF0EA5E9)
+                    )
+
                     // [NEW] Exercise Status
                     SummaryCard(
                         title = "Egzersiz Durumu",

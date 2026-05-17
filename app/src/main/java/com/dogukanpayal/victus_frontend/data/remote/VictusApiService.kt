@@ -187,4 +187,16 @@ interface VictusApiService {
         @Header("Authorization") token: String,
         @Path("patient_id") patientId: String
     ): Response<ResponseBody>
+
+    @POST("v1/water/add")
+    suspend fun addWaterIntake(
+        @Header("Authorization") token: String,
+        @Body request: AddWaterRequest
+    ): Response<AddWaterResponse>
+
+    @GET("v1/water/daily")
+    suspend fun getDailyWater(
+        @Header("Authorization") token: String,
+        @Query("date") date: String? = null
+    ): Response<DailyWaterResponse>
 }

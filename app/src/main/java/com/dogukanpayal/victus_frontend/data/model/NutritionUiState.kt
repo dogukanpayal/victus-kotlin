@@ -18,5 +18,10 @@ data class NutritionUiState(
     
     // Diet parsing specific states
     val isParsingDiet: Boolean = false,
-    val dietParsingError: String? = null
+    val dietParsingError: String? = null,
+    
+    // Water tracking
+    val waterConsumedMl: Int = 0,
+    val waterTargetMl: Int = 2500,
+    val isAddingWater: Boolean = false
 )
