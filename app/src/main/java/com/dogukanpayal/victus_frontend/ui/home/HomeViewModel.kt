@@ -15,7 +15,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 class HomeViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow(NutritionUiState())
+    private val _uiState = MutableStateFlow(NutritionUiState(isLoading = true))
     val uiState: StateFlow<NutritionUiState> = _uiState.asStateFlow()
 
     private val nutritionRepository = NutritionRepositoryImpl()

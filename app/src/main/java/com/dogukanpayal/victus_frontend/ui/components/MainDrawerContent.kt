@@ -99,16 +99,6 @@ fun MainDrawerContent(
 
         // Menu Items
         DrawerMenuItem(
-            label = "Bildirimler",
-            icon = Icons.Default.Notifications,
-            iconColor = primaryGreen,
-            containerColor = lightGreenBg,
-            onClick = onNotificationsClick
-        )
-        
-        Spacer(modifier = Modifier.height(12.dp))
-        
-        DrawerMenuItem(
             label = "Profil ve Ayarlar",
             icon = Icons.Default.Settings,
             iconColor = inactiveGray,

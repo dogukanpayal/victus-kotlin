@@ -58,23 +58,25 @@ fun HomeScreen(viewModel: HomeViewModel, token: String = "") {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Günlük Özet",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color = textDark
-            )
-            TextButton(onClick = { /* Navigate to details */ }) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = if (uiState.dailyCalorieGoal == 0) "Hedef Belirle" else "Detayları Gör",
-                    color = primaryGreen,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
+                    text = "Ana Sayfa",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = textDark
                 )
+                if (uiState.isLoading) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = primaryGreen,
+                        strokeWidth = 2.dp
+                    )
+                }
             }
         }
 
-        if (uiState.dailyCalorieGoal == 0) {
+        if (uiState.dailyCalorieGoal == 0 && !uiState.isLoading) {
             Spacer(modifier = Modifier.height(16.dp))
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -107,30 +109,16 @@ fun HomeScreen(viewModel: HomeViewModel, token: String = "") {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Steps and Calories Cards
-        Row(
+        // Calories Card
+        SummaryCard(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            SummaryCard(
-                modifier = Modifier.weight(1f),
-                title = "ADIM",
-                value = "8,432",
-                trend = "+12%",
-                icon = Icons.Default.Face, // Footsteps placeholder
-                iconColor = primaryGreen,
-                primaryGreen = primaryGreen
-            )
-            SummaryCard(
-                modifier = Modifier.weight(1f),
-                title = "KALORİ",
-                value = uiState.consumedCalories.toString(),
-                trend = if (uiState.dailyCalorieGoal > 0) "%${(uiState.consumedCalories * 100 / uiState.dailyCalorieGoal)} hedef" else "Hedef yok",
-                icon = Icons.Default.Star, // Fire placeholder
-                iconColor = Color(0xFFF97316),
-                primaryGreen = primaryGreen
-            )
-        }
+            title = "KALORİ",
+            value = uiState.consumedCalories.toString(),
+            trend = if (uiState.dailyCalorieGoal > 0) "%${(uiState.consumedCalories * 100 / uiState.dailyCalorieGoal)} hedef" else "Hedef yok",
+            icon = Icons.Default.Star, // Fire placeholder
+            iconColor = Color(0xFFF97316),
+            primaryGreen = primaryGreen
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -153,30 +141,6 @@ fun HomeScreen(viewModel: HomeViewModel, token: String = "") {
                 }
             )
         }
-        
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Daily Step Goal Card
-        StepGoalCard(
-            progress = 0.84f,
-            remainingSteps = "1,568",
-            primaryGreen = primaryGreen,
-            lightGreenBg = lightGreenBg
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Weekly Activity
-        Text(
-            text = "Haftalık Aktivite",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = textDark
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        WeeklyActivityChart(primaryGreen = primaryGreen)
         
         Spacer(modifier = Modifier.height(100.dp)) // Padding for bottom bar
     }
@@ -323,121 +287,6 @@ fun WaterConsumptionCard(
                     contentDescription = "Add Water",
                     tint = primaryGreen,
                     modifier = Modifier.size(28.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun StepGoalCard(
-    progress: Float,
-    remainingSteps: String,
-    primaryGreen: Color,
-    lightGreenBg: Color
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, lightGreenBg, RoundedCornerShape(24.dp)),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF8FAFC).copy(alpha = 0.5f)),
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(0.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Günlük Adım Hedefi",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF1E293B)
-                    )
-                    Text(
-                        text = "Bitime $remainingSteps adım kaldı",
-                        fontSize = 14.sp,
-                        color = Color(0xFF64748B)
-                    )
-                }
-                Text(
-                    text = "${(progress * 100).toInt()}%",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = primaryGreen
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(12.dp)
-                    .clip(RoundedCornerShape(6.dp)),
-                color = primaryGreen,
-                trackColor = Color(0xFFE2E8F0)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(lightGreenBg)
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Star, // Sparkles placeholder
-                        contentDescription = null,
-                        tint = primaryGreen,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "HARİKA GİDİYORSUN!",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = primaryGreen
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun WeeklyActivityChart(primaryGreen: Color) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFDCFCE7).copy(alpha = 0.4f)),
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(0.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            val barHeights = listOf(0.4f, 0.6f, 0.8f, 0.5f, 0.4f, 0.2f, 0.3f)
-            barHeights.forEachIndexed { index, height ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(height)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (index == 2) primaryGreen else Color(0xFF64748B).copy(alpha = 0.2f))
                 )
             }
         }

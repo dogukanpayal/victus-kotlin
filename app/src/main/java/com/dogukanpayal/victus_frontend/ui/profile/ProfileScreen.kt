@@ -231,85 +231,7 @@ fun ProfileScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
 
-            // App Settings Section
-            SettingsSectionTitle(title = "UYGULAMA AYARLARI")
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp)
-                    .border(width = 1.dp, color = lightGray, shape = RoundedCornerShape(16.dp))
-                    .clip(RoundedCornerShape(16.dp))
-            ) {
-                SettingsItem(
-                    icon = Icons.Default.Notifications,
-                    title = "Bildirimler",
-                    iconBackground = lightGray,
-                    iconColor = darkText
-                )
-                HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
-                SettingsItem(
-                    icon = Icons.Default.Lock,
-                    title = "Gizlilik ve Güvenlik",
-                    iconBackground = lightGray,
-                    iconColor = darkText
-                )
-                HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
-                SettingsItem(
-                    icon = Icons.AutoMirrored.Filled.Help,
-                    title = "Yardım Merkezi",
-                    iconBackground = lightGray,
-                    iconColor = darkText
-                )
-                HorizontalDivider(color = lightGray, thickness = 1.dp, modifier = Modifier.padding(horizontal = 16.dp))
-                
-                // Geliştirici Modu: Diyetisyen Toggle
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(44.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFEFF6FF)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AdminPanelSettings,
-                            contentDescription = null,
-                            tint = Color(0xFF3B82F6),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Diyetisyen Modu",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = darkText
-                        )
-                        Text(
-                            text = "Test amaçlı arayüz değişimi",
-                            fontSize = 12.sp,
-                            color = grayText
-                        )
-                    }
-                    Switch(
-                        checked = uiState.role == "dietitian",
-                        onCheckedChange = { viewModel.onRoleToggle(it) },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = Color(0xFF3B82F6)
-                        )
-                    )
-                }
-            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -331,14 +253,7 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "VERSİYON ${uiState.version}",
-                fontSize = 10.sp,
-                color = grayText,
-                letterSpacing = 1.sp
-            )
 
             Spacer(modifier = Modifier.height(32.dp))
         }
@@ -409,11 +324,6 @@ fun SettingsItem(
             }
         }
 
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = "Navigate",
-            tint = Color(0xFF94A3B8),
-            modifier = Modifier.size(20.dp)
-        )
+
     }
 }

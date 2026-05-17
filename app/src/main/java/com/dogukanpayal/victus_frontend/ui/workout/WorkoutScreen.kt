@@ -5,6 +5,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -70,7 +72,8 @@ fun WorkoutScreen(viewModel: WorkoutViewModel, token: String) {
             FloatingActionButton(
                 onClick = { showSelectDialog = true },
                 containerColor = primaryGreen,
-                contentColor = Color.White
+                contentColor = Color.White,
+                modifier = Modifier.padding(bottom = 100.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Antrenman Seç veya Oluştur")
             }
@@ -85,47 +88,51 @@ fun WorkoutScreen(viewModel: WorkoutViewModel, token: String) {
         ) {
             Spacer(modifier = Modifier.height(24.dp))
             
-            if (uiState.burnedCaloriesForToday > 0) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFFFEF2F2) // Light red background
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+            AnimatedVisibility(
+                visible = uiState.burnedCaloriesForToday > 0
+            ) {
+                Column {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFFFEF2F2) // Light red background
                     ) {
-                        Text(
-                            text = "Yakılan Kalori",
-                            fontSize = 16.sp,
-                            color = Color(0xFFEF4444),
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Text("🔥 ", fontSize = 24.sp)
                             Text(
-                                text = "${uiState.burnedCaloriesForToday.toInt()} kcal", 
-                                fontSize = 24.sp, 
-                                fontWeight = FontWeight.Bold, 
-                                color = Color(0xFFEF4444)
+                                text = "Yakılan Kalori",
+                                fontSize = 16.sp,
+                                color = Color(0xFFEF4444),
+                                fontWeight = FontWeight.Medium
                             )
-                        }
-                        
-                        TextButton(
-                            onClick = { viewModel.resetCalories(token) },
-                            modifier = Modifier.padding(top = 8.dp)
-                        ) {
-                            Text("Sıfırla", color = Color(0xFFEF4444), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("🔥 ", fontSize = 24.sp)
+                                Text(
+                                    text = "${uiState.burnedCaloriesForToday.toInt()} kcal", 
+                                    fontSize = 24.sp, 
+                                    fontWeight = FontWeight.Bold, 
+                                    color = Color(0xFFEF4444)
+                                )
+                            }
+                            
+                            TextButton(
+                                onClick = { viewModel.resetCalories(token) },
+                                modifier = Modifier.padding(top = 8.dp)
+                            ) {
+                                Text("Sıfırla", color = Color(0xFFEF4444), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
+                    Spacer(modifier = Modifier.height(24.dp))
                 }
-                Spacer(modifier = Modifier.height(24.dp))
             }
             
             Text(text = "Antrenman Günlüğün", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = textDark)
@@ -514,21 +521,22 @@ fun CreateWorkoutDialog(
     
     // Form State
     var selectedExercise by remember { mutableStateOf<Exercise?>(null) }
-    var isDurationBased by remember { mutableStateOf(false) }
+    val isDurationBased = true
     var duration by remember { mutableStateOf("") }
-    var sets by remember { mutableStateOf("") }
-    var reps by remember { mutableStateOf("") }
     
     var expanded by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = Color.White,
-        modifier = Modifier.fillMaxHeight(0.9f)
+        sheetState = sheetState,
+        modifier = Modifier.fillMaxSize()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             Text(
@@ -592,89 +600,23 @@ fun CreateWorkoutDialog(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Toggle Duration vs Sets
-            Row(
+            OutlinedTextField(
+                value = duration,
+                onValueChange = { if (it.all { char -> char.isDigit() }) duration = it },
+                label = { Text("Süre (Dakika)") },
+                placeholder = { Text("Örn: 30") },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = Color(0xFFF1F5F9)
-                ) {
-                    Row(modifier = Modifier.padding(4.dp)) {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(if (!isDurationBased) Color.White else Color.Transparent)
-                                .clickable { isDurationBased = false }
-                                .padding(horizontal = 24.dp, vertical = 8.dp)
-                        ) {
-                            Text("Set / Tekrar", fontWeight = if (!isDurationBased) FontWeight.Bold else FontWeight.Normal)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(if (isDurationBased) Color.White else Color.Transparent)
-                                .clickable { isDurationBased = true }
-                                .padding(horizontal = 24.dp, vertical = 8.dp)
-                        ) {
-                            Text("Süre", fontWeight = if (isDurationBased) FontWeight.Bold else FontWeight.Normal)
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (isDurationBased) {
-                OutlinedTextField(
-                    value = duration,
-                    onValueChange = { if (it.all { char -> char.isDigit() }) duration = it },
-                    label = { Text("Süre (Dakika)") },
-                    placeholder = { Text("Örn: 30") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black
-                    )
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
                 )
-            } else {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    OutlinedTextField(
-                        value = sets,
-                        onValueChange = { if (it.all { char -> char.isDigit() }) sets = it },
-                        label = { Text("Set") },
-                        placeholder = { Text("Örn: 3") },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black
-                        )
-                    )
-                    OutlinedTextField(
-                        value = reps,
-                        onValueChange = { if (it.all { char -> char.isDigit() }) reps = it },
-                        label = { Text("Tekrar") },
-                        placeholder = { Text("Örn: 12") },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp),
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black
-                        )
-                    )
-                }
-            }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
             
-            val isAddEnabled = selectedExercise != null && 
-                    (if (isDurationBased) duration.isNotBlank() else sets.isNotBlank() && reps.isNotBlank())
+            val isAddEnabled = selectedExercise != null && duration.isNotBlank()
             
             Button(
                 onClick = {
@@ -684,16 +626,14 @@ fun CreateWorkoutDialog(
                         exerciseName = selectedExercise!!.name,
                         isDurationBased = isDurationBased,
                         durationMinutes = duration.toIntOrNull(),
-                        sets = sets.toIntOrNull(),
-                        reps = reps.toIntOrNull()
+                        sets = null,
+                        reps = null
                     )
                     addedExercises.add(ex)
                     
                     // Reset form
                     selectedExercise = null
                     duration = ""
-                    sets = ""
-                    reps = ""
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -709,11 +649,10 @@ fun CreateWorkoutDialog(
             if (addedExercises.isNotEmpty()) {
                 Text("Eklenecek Hareketler (${addedExercises.size})", fontWeight = FontWeight.Bold, color = Color(0xFF0F172A))
                 Spacer(modifier = Modifier.height(8.dp))
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
+                Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(addedExercises) { exercise ->
+                    addedExercises.forEach { exercise ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -735,7 +674,7 @@ fun CreateWorkoutDialog(
                     }
                 }
             } else {
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
             Spacer(modifier = Modifier.height(16.dp))

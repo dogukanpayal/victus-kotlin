@@ -24,39 +24,43 @@ fun DietitianBottomNavigation(
 ) {
     val primaryBlue = Color(0xFF3B82F6)
     val inactiveGray = Color(0xFF94A3B8)
-    val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-
-    Surface(
+    
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp + bottomPadding),
-        color = Color.White,
-        tonalElevation = 12.dp,
-        shadowElevation = 16.dp,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        contentAlignment = Alignment.BottomCenter
     ) {
-        Row(
+        Card(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = bottomPadding),
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .height(72.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
-            DietitianNavItem(
-                label = "Panel",
-                icon = Icons.Default.Dashboard,
-                isSelected = currentScreen == Screen.DietitianDashboard,
-                onClick = { onNavigate(Screen.DietitianDashboard) },
-                activeColor = primaryBlue,
-                inactiveColor = inactiveGray
-            )
-            DietitianNavItem(
-                label = "Hastalar",
-                icon = Icons.Default.People,
-                isSelected = currentScreen == Screen.DietitianPatients || currentScreen == Screen.DietitianPatientDetail,
-                onClick = { onNavigate(Screen.DietitianPatients) },
-                activeColor = primaryBlue,
-                inactiveColor = inactiveGray
-            )
+            Row(
+                modifier = Modifier.fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DietitianNavItem(
+                    label = "Panel",
+                    icon = Icons.Default.Dashboard,
+                    isSelected = currentScreen == Screen.DietitianDashboard,
+                    onClick = { onNavigate(Screen.DietitianDashboard) },
+                    activeColor = primaryBlue,
+                    inactiveColor = inactiveGray
+                )
+                DietitianNavItem(
+                    label = "Hastalar",
+                    icon = Icons.Default.People,
+                    isSelected = currentScreen == Screen.DietitianPatients || currentScreen == Screen.DietitianPatientDetail,
+                    onClick = { onNavigate(Screen.DietitianPatients) },
+                    activeColor = primaryBlue,
+                    inactiveColor = inactiveGray
+                )
+            }
         }
     }
 }

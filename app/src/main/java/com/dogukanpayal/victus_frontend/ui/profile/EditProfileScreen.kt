@@ -482,6 +482,8 @@ fun EditProfileInputField(
             },
             placeholder = { Text(text = placeholder, color = Color(0xFF94A3B8)) },
             colors = TextFieldDefaults.colors(
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
                 focusedContainerColor = lightGray,
                 unfocusedContainerColor = lightGray,
                 focusedIndicatorColor = Color(0xFFE2E8F0),

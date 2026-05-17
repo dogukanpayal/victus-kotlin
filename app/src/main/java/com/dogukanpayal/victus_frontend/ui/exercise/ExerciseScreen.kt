@@ -138,19 +138,70 @@ fun ExerciseScreen(viewModel: ExerciseViewModel, token: String) {
                     .fillMaxWidth()
                     .height(380.dp)
                     .clip(RoundedCornerShape(32.dp))
-                    .background(Color.Black.copy(alpha = 0.05f))
-                    .border(2.dp, primaryGreen.copy(alpha = 0.3f), RoundedCornerShape(32.dp)),
+                    .background(Color.Gray.copy(alpha = 0.1f))
+                    .border(
+                        2.dp,
+                        if (selectedImageUri != null) primaryGreen else primaryGreen.copy(alpha = 0.3f),
+                        RoundedCornerShape(32.dp)
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 if (selectedImageUri != null) {
                     AsyncImage(
                         model = selectedImageUri,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        contentDescription = "Seçilen Vücut Fotoğrafı",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(32.dp))
+                            .padding(8.dp),
+                        contentScale = ContentScale.Fit
                     )
                 } else {
-                    BodyGuideOverlay(primaryGreen)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.linearGradient(
+                                    listOf(Color(0xFF1E293B), Color(0xFF0F172A))
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccessibilityNew,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.15f),
+                            modifier = Modifier.size(160.dp)
+                        )
+                    }
+
+                    // Scanning Frame Corners
+                    ScanningOverlay(primaryGreen)
+
+                    // Scanning Line Animation
+                    val infiniteTransition = rememberInfiniteTransition(label = "scanning")
+                    val translateY by infiniteTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 240f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(2000, easing = LinearEasing),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "scanningLine"
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(0.9f)
+                            .height(2.dp)
+                            .align(Alignment.Center)
+                            .offset(y = (-120 + translateY.toInt()).dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(Color.Transparent, primaryGreen, Color.Transparent)
+                                )
+                            )
+                    )
                 }
 
                 if (isAnalyzing) {
@@ -225,7 +276,8 @@ fun ExerciseScreen(viewModel: ExerciseViewModel, token: String) {
                     HistoryItem(
                         metric = metric,
                         color = primaryGreen,
-                        onDelete = { viewModel.deleteMetrics(token, metric.id) }
+                        onDelete = { viewModel.deleteMetrics(token, metric.id) },
+                        onItemClick = { viewModel.showHistoryReport(metric) }
                     )
                 }
 
@@ -249,7 +301,7 @@ fun ExerciseScreen(viewModel: ExerciseViewModel, token: String) {
                 }
             }
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }
@@ -393,28 +445,6 @@ fun ComparisonResultUI(result: com.dogukanpayal.victus_frontend.data.model.Compa
             ComparisonMetricRow("Ağırlık", "${result.before.weight} kg", "${result.after.weight} kg", result.weightDelta, null)
             ComparisonMetricRow("BMI", result.before.bmi.toString().take(4), result.after.bmi.toString().take(4), result.bmiDelta, false)
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text("Postür Değişimi", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-        Spacer(modifier = Modifier.height(8.dp))
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            PostureNoteBox("Önceki", result.before.postureNotes, Modifier.weight(1f))
-            PostureNoteBox("Sonraki", result.after.postureNotes, Modifier.weight(1f))
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Card(
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
-            shape = RoundedCornerShape(20.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("Özet Değerlendirme", fontWeight = FontWeight.Bold, color = Color(0xFF166534))
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(result.summaryText, fontSize = 14.sp, color = Color(0xFF166534).copy(alpha = 0.8f))
-            }
-        }
     }
 }
 
@@ -456,23 +486,6 @@ fun ComparisonMetricRow(label: String, before: String, after: String, delta: Dou
     }
 }
 
-@Composable
-fun PostureNoteBox(label: String, note: String, modifier: Modifier) {
-    Column(modifier = modifier) {
-        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
-        Spacer(modifier = Modifier.height(4.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(100.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color(0xFFF1F5F9))
-                .padding(8.dp)
-        ) {
-            Text(note, fontSize = 11.sp, color = Color(0xFF334155), overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
-        }
-    }
-}
 
 @Composable
 fun BodyGuideOverlay(color: Color) {
@@ -531,27 +544,7 @@ fun AnalysisResultContent(report: BodyCompositionReport, primaryGreen: Color) {
                 isPositiveGood = true
             )
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFF0FDF4)),
-            shape = RoundedCornerShape(20.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Info, contentDescription = null, tint = primaryGreen, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("AI Postür Notu", fontWeight = FontWeight.Bold, color = Color(0xFF166534))
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(report.postureNotes, fontSize = 14.sp, color = Color(0xFF166534).copy(alpha = 0.8f))
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
+        Spacer(modifier = Modifier.height(24.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("BMI: ${"%.1f".format(report.currentMetrics.bmi)}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
             Spacer(modifier = Modifier.width(16.dp))
@@ -605,9 +598,12 @@ fun MetricCard(label: String, value: String, delta: Double, modifier: Modifier, 
 }
 
 @Composable
-fun HistoryItem(metric: HealthMetricsData, color: Color, onDelete: () -> Unit) {
+fun HistoryItem(metric: HealthMetricsData, color: Color, onDelete: () -> Unit, onItemClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 12.dp)
+            .clickable { onItemClick() },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(1.dp)
@@ -662,5 +658,29 @@ fun ExerciseControlButton(icon: ImageVector, label: String, onClick: () -> Unit)
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(label, fontSize = 12.sp, color = Color(0xFF64748B))
+    }
+}
+
+@Composable
+fun ScanningOverlay(color: Color) {
+    Box(modifier = Modifier.fillMaxSize().padding(24.dp)) {
+        val cornerSize = 40.dp
+        val strokeWidth = 4.dp
+
+        // Top Left
+        Box(modifier = Modifier.align(Alignment.TopStart).size(cornerSize)
+            .border(width = strokeWidth, color = color, shape = RoundedCornerShape(topStart = 12.dp, bottomStart = 0.dp, topEnd = 0.dp, bottomEnd = 0.dp)))
+
+        // Top Right
+        Box(modifier = Modifier.align(Alignment.TopEnd).size(cornerSize)
+            .border(width = strokeWidth, color = color, shape = RoundedCornerShape(topEnd = 12.dp, topStart = 0.dp, bottomStart = 0.dp, bottomEnd = 0.dp)))
+
+        // Bottom Left
+        Box(modifier = Modifier.align(Alignment.BottomStart).size(cornerSize)
+            .border(width = strokeWidth, color = color, shape = RoundedCornerShape(bottomStart = 12.dp, topStart = 0.dp, topEnd = 0.dp, bottomEnd = 0.dp)))
+
+        // Bottom Right
+        Box(modifier = Modifier.align(Alignment.BottomEnd).size(cornerSize)
+            .border(width = strokeWidth, color = color, shape = RoundedCornerShape(bottomEnd = 12.dp, topStart = 0.dp, topEnd = 0.dp, bottomStart = 0.dp)))
     }
 }

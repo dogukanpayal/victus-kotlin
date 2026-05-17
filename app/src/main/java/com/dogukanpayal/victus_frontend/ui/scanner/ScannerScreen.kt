@@ -368,66 +368,6 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                             .padding(8.dp), // Give it some padding for border effect
                         contentScale = ContentScale.Fit // Show the WHOLE photo
                     )
-
-                    // Temizle butonu (sağ üst köşe)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.TopEnd
-                    ) {
-                        Surface(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(CircleShape)
-                                .clickable { viewModel.clearSelectedImage() },
-                            color = Color.Black.copy(alpha = 0.5f),
-                            shape = CircleShape
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Fotoğrafı Kaldır",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    // Fotoğraf seçildi bilgi bandı (alt kısım)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.BottomCenter
-                    ) {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(16.dp)),
-                            color = Color.Black.copy(alpha = 0.6f),
-                            shape = RoundedCornerShape(16.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = "📸",
-                                    fontSize = 16.sp
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Fotoğraf hazır — analiz için gönderilecek",
-                                    fontSize = 13.sp,
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
-                    }
                 } else {
                     // Placeholder (fotoğraf seçilmemiş)
                     Box(
@@ -474,7 +414,24 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                             )
                     )
                 }
+
+                if (isAnalyzing) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.Black.copy(alpha = 0.6f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(color = Color.White)
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("🧬 AI Analiz Ediyor...", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             if (isManualEntryDialogVisible) {
                 ManualEntryDialog(
@@ -485,30 +442,6 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                     }
                 )
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-                // Analiz ediliyor loading overlay
-                if (isAnalyzing) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black.copy(alpha = 0.4f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            CircularProgressIndicator(color = Color.White)
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "Yapay Zeka Analiz Ediyor...",
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -676,39 +609,7 @@ fun ScannerScreen(viewModel: ScannerViewModel, token: String) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Tip Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 100.dp),
-                colors = CardDefaults.cardColors(containerColor = lightGreenBg),
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(0.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(primaryGreen),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("i", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "İpucu: En iyi sonuç için yemeği iyi aydınlatılmış bir ortamda ve net bir şekilde kadraja alın.",
-                        fontSize = 12.sp,
-                        color = Color(0xFF166534),
-                        lineHeight = 18.sp
-                    )
-                }
-            }
+            Spacer(modifier = Modifier.height(100.dp))
         }
     }
 }
@@ -768,7 +669,7 @@ fun ManualEntryDialog(
     onSubmit: (String, Double) -> Unit
 ) {
     var foodName by remember { mutableStateOf("") }
-    var portion by remember { mutableStateOf("1.0") }
+    var portion by remember { mutableStateOf("") }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -781,16 +682,25 @@ fun ManualEntryDialog(
                     label = { Text("Yemek Adı") },
                     placeholder = { Text("Örn: Tavuk Sote") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
+                    )
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     value = portion,
                     onValueChange = { portion = it },
                     label = { Text("Porsiyon Adedi") },
+                    placeholder = { Text("Örn: 1.0") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black
+                    )
                 )
             }
         },

@@ -222,7 +222,7 @@ class MainActivity : ComponentActivity() {
                     ) { innerPadding ->
                         // Manual top padding for topBar since we disabled Scaffold insets
                         val topPadding = if (showBottomBar) innerPadding.calculateTopPadding() else 0.dp
-                        val bottomPadding = if (showBottomBar) innerPadding.calculateBottomPadding() else 0.dp
+                        val bottomPadding = 0.dp
                         
                         Box(modifier = Modifier.padding(top = topPadding, bottom = bottomPadding)) {
                             // Token geldiğinde kullanıcı bilgilerini çek

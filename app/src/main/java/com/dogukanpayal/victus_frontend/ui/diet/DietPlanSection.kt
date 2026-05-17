@@ -72,8 +72,6 @@ fun DietPlanSection(
             }
         } else if (uiState.plan == null) {
             UploadPromptCard(onUploadClick = { viewModel.onUploadRequested() })
-            Spacer(modifier = Modifier.height(12.dp))
-            ManualPlanCreateButton(onClick = onNavigateToCreator)
         } else {
             // Plan Varsa Göster
             DietPlanView(
@@ -410,17 +408,4 @@ private fun DietComplianceCard(
     }
 }
 
-@Composable
-private fun ManualPlanCreateButton(onClick: () -> Unit) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, Color(0xFF7C3AED).copy(alpha = 0.5f)),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF7C3AED))
-    ) {
-        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
-        Spacer(modifier = Modifier.width(12.dp))
-        Text("Kendin Oluştur (Manuel)", fontWeight = FontWeight.Bold)
-    }
-}
+

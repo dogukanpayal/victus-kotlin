@@ -212,6 +212,16 @@ class ExerciseViewModel(
         _analysisResult.value = null
     }
 
+    fun showHistoryReport(metric: HealthMetricsData) {
+        _analysisResult.value = BodyCompositionReport(
+            currentMetrics = metric,
+            fatDelta = 0.0,
+            muscleDelta = 0.0,
+            postureNotes = metric.postureNotes,
+            confidenceScore = metric.confidenceScore
+        )
+    }
+
     fun deleteMetrics(token: String, id: String) {
         if (token.isEmpty()) return
         viewModelScope.launch {

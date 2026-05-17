@@ -17,10 +17,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import com.dogukanpayal.victus_frontend.Screen
 
 @Composable
@@ -32,32 +28,26 @@ fun MainBottomNavigation(
     val inactiveGray = Color(0xFF94A3B8)
     val backgroundColor = Color.White
     
-    // Calculate navigation bar padding to ensure background extends to the bottom
-    val bottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(100.dp + bottomPadding), // Grow to accommodate system navigation bar
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
-        // Main Bar Surface - Extends to the very bottom but content is padded
-        Surface(
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(72.dp + bottomPadding),
-            color = backgroundColor,
-            tonalElevation = 12.dp,
-            shadowElevation = 16.dp,
-            shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+                .height(72.dp),
+            colors = CardDefaults.cardColors(containerColor = backgroundColor),
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = bottomPadding), // Push icons/labels above system bar
+                modifier = Modifier.fillMaxSize(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left Items
+                // 1. Scanner
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     NavigationItem(
                         label = "Tarayıcı",
@@ -68,6 +58,8 @@ fun MainBottomNavigation(
                         activeColor = primaryGreen
                     )
                 }
+                
+                // 2. Diet
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     NavigationItem(
                         label = "Diyet",
@@ -79,10 +71,30 @@ fun MainBottomNavigation(
                     )
                 }
 
-                // Space for Home Button
-                Spacer(modifier = Modifier.weight(1f))
+                // 3. Home (Beautiful highlighted circle inside the bar)
+                Box(modifier = Modifier.weight(1.2f), contentAlignment = Alignment.Center) {
+                    val isHomeSelected = currentScreen == Screen.Home
+                    val homeBg = if (isHomeSelected) primaryGreen else Color(0xFFF1F5F9)
+                    val homeColor = if (isHomeSelected) Color.White else primaryGreen
+                    
+                    Box(
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(homeBg)
+                            .clickable { onNavigate(Screen.Home) },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = "Ana Sayfa",
+                            tint = homeColor,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                }
 
-                // Right Items
+                // 4. Workout
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     NavigationItem(
                         label = "Antrenman",
@@ -93,6 +105,8 @@ fun MainBottomNavigation(
                         activeColor = primaryGreen
                     )
                 }
+
+                // 5. Analysis
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     NavigationItem(
                         label = "Analiz",
@@ -104,31 +118,6 @@ fun MainBottomNavigation(
                     )
                 }
             }
-        }
-
-        // Protruding Home Button
-        val isHomeSelected = currentScreen == Screen.Home
-        val homeButtonBg = if (isHomeSelected) primaryGreen else Color(0xFFF1F5F9)
-        val homeIconColor = if (isHomeSelected) Color.White else primaryGreen
-
-        Box(
-            modifier = Modifier
-                .padding(bottom = 28.dp + bottomPadding) // Align relative to the bar
-                .size(72.dp)
-                .clip(CircleShape)
-                .background(Color.White)
-                .padding(5.dp) // Premium border effect
-                .clip(CircleShape)
-                .background(homeButtonBg)
-                .clickable { onNavigate(Screen.Home) },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Home,
-                contentDescription = "Ana Sayfa",
-                tint = homeIconColor,
-                modifier = Modifier.size(34.dp)
-            )
         }
     }
 }
@@ -153,12 +142,12 @@ fun NavigationItem(
             imageVector = icon,
             contentDescription = label,
             tint = if (isSelected) activeColor else inactiveColor,
-            modifier = Modifier.size(28.dp)
+            modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             color = if (isSelected) activeColor else inactiveColor,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
         )
