@@ -291,7 +291,17 @@ fun MessageBottomSheet(
                 onValueChange = { title = it },
                 label = { Text("Konu") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedLabelColor = Color(0xFF3B82F6),
+                    unfocusedLabelColor = Color(0xFF64748B),
+                    focusedBorderColor = Color(0xFF3B82F6),
+                    unfocusedBorderColor = Color(0xFFE2E8F0),
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
             )
             
             OutlinedTextField(
@@ -299,7 +309,17 @@ fun MessageBottomSheet(
                 onValueChange = { message = it },
                 label = { Text("Mesajınız") },
                 modifier = Modifier.fillMaxWidth().height(120.dp),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    focusedLabelColor = Color(0xFF3B82F6),
+                    unfocusedLabelColor = Color(0xFF64748B),
+                    focusedBorderColor = Color(0xFF3B82F6),
+                    unfocusedBorderColor = Color(0xFFE2E8F0),
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                )
             )
             
             Button(
